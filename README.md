@@ -1,3 +1,3 @@
 # Coinz
-Name: Kristian Kalinak
+Name: Kristian Kalinak\
 UUN: s1611423
