@@ -1,4 +1,7 @@
 <resources>
+    <!--Default-->
     <string name="app_name">Coinz</string>
     <string name="action_settings">Settings</string>
+    <!--Mapbox-->
+    <string name="access_token">pk.eyJ1IjoibmFycmlrIiwiYSI6ImNqcDBkNHVrcjA0eTIza210c2twYzhnbGYifQ.qzC3CULlVh-FLMvIsOqOdQ</string>
 </resources>
