@@ -3,7 +3,6 @@ package four_k.coinz;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

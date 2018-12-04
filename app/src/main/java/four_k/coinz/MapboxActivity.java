@@ -37,8 +37,6 @@ import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
 
 import java.util.List;
 
-import static com.mapbox.mapboxsdk.maps.MapboxMap.OnCameraMoveStartedListener.REASON_API_GESTURE;
-
 public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener, DownloadFileTask.AsyncResponse{
 
     private String tag = "MapboxActivity";
@@ -73,8 +71,10 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             // Add locate user option and hide it on click
             FloatingActionButton fab = findViewById(R.id.floatingActionButton);
             fab.setOnClickListener((View view) -> {
-                setCameraPosition(originLocation);
-                fab.hide();
+                if (originLocation != null) {
+                    setCameraPosition(originLocation);
+                    fab.hide();
+                }
             });
             // Show locate used button if user moves camera
             map.addOnCameraMoveStartedListener(reason -> {
@@ -98,6 +98,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     // Async DownloadFileTask callback
     @Override
+    @SuppressWarnings("ConstantConditions")
     public void processFinish(String s){
         // Create icons of different color for different currencies
         IconFactory iconFactory = IconFactory.getInstance(this);
@@ -116,29 +117,35 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             for (Feature f : fc.features()) {
                 Point p = (Point) f.geometry();
                 // Check what currency a coin is
-                if (f.properties().get("currency").getAsString().equals("DOLR")) {
-                    map.addMarker(new MarkerOptions()
-                            // Draw icon based on coin's currency
-                            .icon(dolrIcon)
-                            // Format title into (Value 2 decimal places + currency)
-                            .title(df.format(Float.parseFloat(f.properties().get("value").getAsString()))+" "+f.properties().get("currency").getAsString())
-                            // Draw point based on the latitude and longitude
-                            .position(new LatLng(p.latitude(), p.longitude())));
-                } else if (f.properties().get("currency").getAsString().equals("PENY")) {
-                    map.addMarker(new MarkerOptions()
-                            .icon(penyIcon)
-                            .title(df.format(Float.parseFloat(f.properties().get("value").getAsString()))+" "+f.properties().get("currency").getAsString())
-                            .position(new LatLng(p.latitude(), p.longitude())));
-                } else if (f.properties().get("currency").getAsString().equals("QUID")) {
-                    map.addMarker(new MarkerOptions()
-                            .icon(quidIcon)
-                            .title(df.format(Float.parseFloat(f.properties().get("value").getAsString()))+" "+f.properties().get("currency").getAsString())
-                            .position(new LatLng(p.latitude(), p.longitude())));
-                } else if (f.properties().get("currency").getAsString().equals("SHIL")) {
-                    map.addMarker(new MarkerOptions()
-                            .icon(shilIcon)
-                            .title(df.format(Float.parseFloat(f.properties().get("value").getAsString()))+" "+f.properties().get("currency").getAsString())
-                            .position(new LatLng(p.latitude(), p.longitude())));
+                switch (f.properties().get("currency").getAsString()) {
+                    case "DOLR":
+                        map.addMarker(new MarkerOptions()
+                                // Draw icon based on coin's currency
+                                .icon(dolrIcon)
+                                // Format title into (Value 2 decimal places + currency)
+                                .title(df.format(Float.parseFloat(f.properties().get("value").getAsString())) + " " + f.properties().get("currency").getAsString())
+                                // Draw point based on the latitude and longitude
+                                .position(new LatLng(p.latitude(), p.longitude())));
+                        break;
+                    case "PENY":
+                        map.addMarker(new MarkerOptions()
+                                .icon(penyIcon)
+                                .title(df.format(Float.parseFloat(f.properties().get("value").getAsString())) + " " + f.properties().get("currency").getAsString())
+                                .position(new LatLng(p.latitude(), p.longitude())));
+                        break;
+                    case "QUID":
+                        map.addMarker(new MarkerOptions()
+                                .icon(quidIcon)
+                                .title(df.format(Float.parseFloat(f.properties().get("value").getAsString())) + " " + f.properties().get("currency").getAsString())
+                                .position(new LatLng(p.latitude(), p.longitude())));
+                        break;
+                    case "SHIL":
+                        map.addMarker(new MarkerOptions()
+                                .icon(shilIcon)
+                                .title(df.format(Float.parseFloat(f.properties().get("value").getAsString())) + " " + f.properties().get("currency").getAsString())
+                                .position(new LatLng(p.latitude(), p.longitude())));
+                        break;
+                    default: break;
                 }
             }
         }
@@ -231,7 +238,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         if (granted) {
             enableLocation();
         } else {
-            Toast.makeText(getApplicationContext(), "Location is necessary to collect coins", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Location is necessary to collect coins", Toast.LENGTH_LONG).show();
             finish();
         }
     }

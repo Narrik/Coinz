@@ -4,4 +4,10 @@
     <string name="action_settings">Settings</string>
     <!--Mapbox-->
     <string name="access_token">pk.eyJ1IjoibmFycmlrIiwiYSI6ImNqcDBkNHVrcjA0eTIza210c2twYzhnbGYifQ.qzC3CULlVh-FLMvIsOqOdQ</string>
+    <!--Firebase-->
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_login">Login</string>
+    <string name="hint_account">Don\'t have an account?</string>
+    <string name="hint_register">Register</string>
 </resources>
