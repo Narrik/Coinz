@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         // Get current user
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
+        // If there is no user, return
         if (currentUser == null){
             return;
         }
