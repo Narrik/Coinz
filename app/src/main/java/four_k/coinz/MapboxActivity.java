@@ -39,7 +39,7 @@ import java.util.List;
 
 public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener, DownloadFileTask.AsyncResponse{
 
-    private String tag = "MapboxActivity";
+    private static final String TAG = "MapboxActivity";
     private MapView mapView;
     private MapboxMap map;
 
@@ -62,7 +62,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
         if (mapboxMap == null){
-            Log.d(tag, "[onMapReady] mapBox is null");
+            Log.d(TAG, "[onMapReady] mapBox is null");
         } else {
             map = mapboxMap;
             // Set user interface options
@@ -153,11 +153,11 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
-            Log.d(tag, "Permissions are granted");
+            Log.d(TAG, "Permissions are granted");
             initializeLocationEngine();
             initializeLocationLayer();
         } else {
-            Log.d(tag, "Permissions are not granted");
+            Log.d(TAG, "Permissions are not granted");
             permissionsManager = new PermissionsManager(this);
             permissionsManager.requestLocationPermissions(this);
         }
@@ -184,10 +184,10 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @SuppressWarnings("MissingPermission")
     private void initializeLocationLayer() {
         if (mapView == null) {
-            Log.d(tag, "[initializeLocationLayer] mapView is null");
+            Log.d(TAG, "[initializeLocationLayer] mapView is null");
         } else {
             if (map == null) {
-                Log.d(tag, "[initializeLocationLayer] map is null");
+                Log.d(TAG, "[initializeLocationLayer] map is null");
             } else {
                 locationLayerPlugin = new LocationLayerPlugin(mapView, map, locationEngine);
                 locationLayerPlugin.setLocationLayerEnabled(true);
@@ -206,7 +206,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     @SuppressWarnings("MissingPermission")
     public void onConnected() {
-        Log.d(tag, "[onConnected] requesting location updates");
+        Log.d(TAG, "[onConnected] requesting location updates");
         locationEngine.requestLocationUpdates();
     }
 
@@ -214,7 +214,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     public void onLocationChanged(Location location) {
         FloatingActionButton fab = findViewById(R.id.floatingActionButton);
         if (location == null) {
-            Log.d(tag, "[onLocationChanged] location is null");
+            Log.d(TAG, "[onLocationChanged] location is null");
             // Camera follows user only if user centered camera on the user
         } else if (fab.isOrWillBeHidden()){
             originLocation = location;
@@ -229,12 +229,12 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     public void onExplanationNeeded(List<String> permissionsToExplain) {
         // present toast or dialog
-        Log.d(tag, "[onExplanationNeeded] Permissions" + permissionsToExplain.toString());
+        Log.d(TAG, "[onExplanationNeeded] Permissions" + permissionsToExplain.toString());
     }
 
     @Override
     public void onPermissionResult(boolean granted) {
-        Log.d(tag, "[onPermissionResult] granted = "+granted);
+        Log.d(TAG, "[onPermissionResult] granted = "+granted);
         if (granted) {
             enableLocation();
         } else {

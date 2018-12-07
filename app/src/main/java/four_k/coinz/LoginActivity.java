@@ -14,19 +14,29 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener{
 
-    private static final String tag = "LoginActivity";
+    private static final String TAG = "LoginActivity";
     private FirebaseAuth mAuth;
     private EditText emailField;
     private EditText passwordField;
+    private FirebaseFirestore database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        database = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setTimestampsInSnapshotsEnabled(true)
+                .build();
+        database.setFirestoreSettings(settings);
         mAuth = FirebaseAuth.getInstance();
         // Text fields
         emailField = findViewById(R.id.emailField);
@@ -43,7 +53,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         FirebaseUser currentUser = mAuth.getCurrentUser();
         // If user is signed in, return to main menu
         if (currentUser != null) {
-            Toast.makeText(getApplicationContext(), "Welcome back!", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -59,55 +68,55 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void createAccount(String email, String password) {
-        Log.d(tag, "createAccount:" + email);
+        Log.d(TAG, "createAccount:" + email);
         if (invalidForm()) {
             return;
         }
-        // [START create_user_with_email]
+        // Create a user with valid email and password
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         // Sign in success, update UI with the signed-in user's information
-                        Log.d(tag, "createUserWithEmail:success");
-                        FirebaseUser user = mAuth.getCurrentUser();
+                        FirebaseUser currentUser = mAuth.getCurrentUser();
+                        Log.d(TAG, "createUserWithEmail:success");
+                        Map<String,String> userInfo = new HashMap<>();
+                        userInfo.put("email",currentUser.getEmail());
+                        userInfo.put("username",null);
+                        database.collection("Users").document(currentUser.getUid()).set(userInfo);
                         finish();
                     } else {
                         // If sign in fails, display a message to the user.
-                        Log.d(tag, "createUserWithEmail:failure", task.getException());
+                        Log.d(TAG, "createUserWithEmail:failure", task.getException());
                         if (password.length() < 6) {
                             Toast.makeText(this, "Password must be at least 6 characters.",
                                     Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(this, "User with that email address already exists.",
+                            Toast.makeText(this, "Email address not valid or already in use.",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
-        // [END create_user_with_email]
     }
 
     private void signIn(String email, String password) {
-        Log.d(tag, "signIn:" + email);
+        Log.d(TAG, "signIn:" + email);
         if (invalidForm()) {
             return;
         }
-
-        // [START sign_in_with_email]
+        // Sign in a user with existing email/password combination
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         // Sign in success, update UI with the signed-in user's information
-                        Log.d(tag, "signInWithEmail:success");
-                        FirebaseUser user = mAuth.getCurrentUser();
+                        Log.d(TAG, "signInWithEmail:success");
                         finish();
                     } else {
                         // If sign in fails, display a message to the user.
-                        Log.d(tag, "signInWithEmail:failure", task.getException());
+                        Log.d(TAG, "signInWithEmail:failure", task.getException());
                         Toast.makeText(this, "Unknown email/password combination.",
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
-        // [END sign_in_with_email]
     }
 
 

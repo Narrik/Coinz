@@ -10,4 +10,7 @@
     <string name="hint_login">Login</string>
     <string name="hint_account">Don\'t have an account?</string>
     <string name="hint_register">Register</string>
+    <string name="enter_your_username">Enter your username</string>
+    <string name="accept">accept</string>
+    <string name="looks_like_it_s_your_first_time_here">Looks like it\'s your first time here!</string>
 </resources>
