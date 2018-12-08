@@ -25,6 +25,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -67,7 +68,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private PermissionsManager permissionsManager;
     private LocationEngine locationEngine;
     private LocationLayerPlugin locationLayerPlugin;
-    private Location originLocation;
+    private Location currentLocation;
     private FirebaseAuth mAuth;
     private FirebaseFirestore database;
     private DocumentReference userInfo;
@@ -100,8 +101,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             // Add locate user option and hide it on click
             FloatingActionButton fab = findViewById(R.id.floatingActionButton);
             fab.setOnClickListener((View view) -> {
-                if (originLocation != null) {
-                    setCameraPosition(originLocation);
+                if (currentLocation != null) {
+                    setCameraPosition(currentLocation);
                     fab.hide();
                 }
             });
@@ -151,6 +152,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 if (task.isSuccessful() && task.getResult().exists()){
                     // If a map was never downloaded, or wasn't downloaded today, get today's map and update the field
                     if (task.getResult().getData().get("date") == null || !(task.getResult().getData().get("date").equals(today))) {
+                        Log.d(TAG,"Updating map");
+                        removeOldCoins();
                         Map<String, String> lastDownload = new HashMap<>();
                         lastDownload.put("date", today);
                         userInfo.collection("Map").document("LastDownload").set(lastDownload);
@@ -172,10 +175,25 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
+    private void removeOldCoins() {
+        userInfo.collection("Map")
+                .whereGreaterThanOrEqualTo("value",0)
+                .get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                Log.d(TAG,"Removed old coins");
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    document.getReference().delete();
+                }
+            } else {
+                Log.d(TAG, "Error getting documents: ", task.getException());
+            }
+        });
+    }
+
     private void downloadTodayMap() {
         DownloadFileTask task = new DownloadFileTask();
         task.delegate = this;
-        task.execute("http://homepages.inf.ed.ac.uk/stg/coinz/2018/11/29/coinzmap.geojson");
+        task.execute("http://homepages.inf.ed.ac.uk/stg/coinz/"+today+"/coinzmap.geojson");
     }
 
     // Async DownloadFileTask callback
@@ -192,36 +210,29 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                                      f.properties().get("currency").getAsString(),
                                      ((Point) f.geometry()).longitude(),
                                      ((Point) f.geometry()).latitude());
-                userInfo.collection("Map").document(f.properties().get("id").getAsString()).set(coin);
+                userInfo.collection("Map").document(coin.getId()).set(coin);
             }
         }
+        // Draw coins available for today
+        drawCoins();
     }
 
 
     public void drawCoins(){
+        // Remove previous markers as this method is called to update when a coin is collected
+        map.removeAnnotations();
         // Download information about which coins have not yet been collected
         userInfo.collection("Map")
-                // Ignore the LastDownload document
                 .whereGreaterThanOrEqualTo("value",0)
-                .addSnapshotListener((queryDocumentSnapshots, e) -> {
-                    if (e != null){
-                        Log.d(TAG,"Listen failed with "+e.toString());
-                    } else if (queryDocumentSnapshots != null) {
-                        for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
-                            switch (dc.getType()) {
-                                case ADDED:
-                                    drawCoin(dc.getDocument().toObject(Coin.class));
-                                    break;
-                                case REMOVED:
-                                    map.removeAnnotations();
-                                    Log.d(TAG,"Map should be clear");
-                                    break;
-                                default: break;
-                            }
-                        }
-                    }
-
-                });
+                .get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    drawCoin(document.toObject(Coin.class));
+                }
+            } else {
+                Log.d(TAG, "Error getting documents: ", task.getException());
+            }
+        });
     }
 
     private void drawCoin(Coin coin){
@@ -282,7 +293,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
         Location lastLocation = locationEngine.getLastLocation();
         if (lastLocation != null) {
-            originLocation = lastLocation;
+            currentLocation = lastLocation;
             setCameraPosition(lastLocation);
         } else {
             locationEngine.addLocationEngineListener(this);
@@ -308,7 +319,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private void setCameraPosition(Location location) {
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
                 location.getLongitude()), 16));
-        userInfo.collection("Map").document("d6d3-fb1a-48a7-a63f-5e8e-d42e").delete();
     }
     // LocationEngineListener
     @Override
@@ -323,21 +333,49 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         FloatingActionButton fab = findViewById(R.id.floatingActionButton);
         if (location == null) {
             Log.d(TAG, "[onLocationChanged] location is null");
-            // Camera follows user only if user centered camera on the user
         } else {
+            // Camera follows user only if user centered camera on the user
             if (fab.isOrWillBeHidden()) {
-                originLocation = location;
+                currentLocation = location;
                 setCameraPosition(location);
-                // Camera doesn't follow if not centered on the user
             } else {
-                originLocation = location;
+                // Camera doesn't follow if not centered on the user
+                currentLocation = location;
             }
-            collectCoin(location);
+            collectCoins();
         }
     }
 
-    public void collectCoin(Location location){
+    public void collectCoins(){
+        userInfo.collection("Map")
+                .whereGreaterThanOrEqualTo("value",0)
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            if (collectCoin(document.toObject(Coin.class))){
+                                document.getReference().delete();
+                                drawCoins();
+                            }
+                        }
+                    } else {
+                        Log.d(TAG, "Error getting documents: ", task.getException());
+                    }
+                });
+    }
 
+    public boolean collectCoin(Coin coin){
+        DecimalFormat df = new DecimalFormat("#.##");
+        Location coinLocation = new Location("");
+        coinLocation.setLatitude(coin.getLatitude());
+        coinLocation.setLongitude(coin.getLongitude());
+        float distanceInMetres = coinLocation.distanceTo(currentLocation);
+        // If our distance to coin is less than 25 metres, user can press button to collect coin
+        if (distanceInMetres <= 25) {
+            Toast.makeText(getApplicationContext(), "Collected a "+df.format(coin.getValue())+" "+coin.getCurrency()+" coin!", Toast.LENGTH_SHORT).show();
+            userInfo.collection("Wallet").document(coin.getId()).set(coin);
+            return true;
+        }
+        return false;
     }
 
     // PermissionListener

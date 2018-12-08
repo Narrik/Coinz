@@ -44,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
         // Open login screen (doesn't open if user is logged in)
         Intent loginIntent = new Intent(MainActivity.this, LoginActivity.class);
         startActivity(loginIntent);
-
         // Button for turning on Map
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener((View view) -> {
@@ -56,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
         chatButton.setOnClickListener((View view) -> {
             Intent chatIntent = new Intent(MainActivity.this, ChatActivity.class);
             startActivity(chatIntent);
+        });
+        // Button for accessing bank
+        Button bankButton = findViewById(R.id.bankButton);
+        bankButton.setOnClickListener((View view) -> {
+            Intent bankIntent = new Intent(MainActivity.this, BankActivity.class);
+            startActivity(bankIntent);
         });
         // Button for signing out
         Button signOutButton = findViewById(R.id.signOutButton);
