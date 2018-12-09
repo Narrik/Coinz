@@ -71,7 +71,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private Location currentLocation;
     private FirebaseAuth mAuth;
     private FirebaseFirestore database;
-    private DocumentReference userInfo;
+    private DocumentReference userData;
     private String today;
     private Icon dolrIcon;
     private Icon quidIcon;
@@ -145,10 +145,10 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                     .build();
             database.setFirestoreSettings(settings);
             // Get current user information
-            userInfo = database.collection("Users").document(currentUser.getUid());
+            userData = database.collection("Users").document(currentUser.getUid());
 
             // Check user's Map collection for information on when map was last downloaded (on firebase)
-            userInfo.collection("Map").document("LastDownload").get().addOnCompleteListener(task -> {
+            userData.collection("Map").document("LastDownload").get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult().exists()){
                     // If a map was never downloaded, or wasn't downloaded today, get today's map and update the field
                     if (task.getResult().getData().get("date") == null || !(task.getResult().getData().get("date").equals(today))) {
@@ -156,7 +156,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                         removeOldCoins();
                         Map<String, String> lastDownload = new HashMap<>();
                         lastDownload.put("date", today);
-                        userInfo.collection("Map").document("LastDownload").set(lastDownload);
+                        userData.collection("Map").document("LastDownload").set(lastDownload);
                         downloadTodayMap();
                     }
                     // If user doesn't have a Map collection, create one and add today's map
@@ -164,7 +164,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                     Log.d(TAG, "Couldn't check LastDownload date");
                     Map<String,String> lastDownload = new HashMap<>();
                     lastDownload.put("date",today);
-                    userInfo.collection("Map").document("LastDownload").set(lastDownload);
+                    userData.collection("Map").document("LastDownload").set(lastDownload);
                     downloadTodayMap();
                 }
             });
@@ -176,7 +176,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     private void removeOldCoins() {
-        userInfo.collection("Map")
+        userData.collection("Map")
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -210,7 +210,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                                      f.properties().get("currency").getAsString(),
                                      ((Point) f.geometry()).longitude(),
                                      ((Point) f.geometry()).latitude());
-                userInfo.collection("Map").document(coin.getId()).set(coin);
+                userData.collection("Map").document(coin.getId()).set(coin);
             }
         }
         // Draw coins available for today
@@ -222,7 +222,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         // Remove previous markers as this method is called to update when a coin is collected
         map.removeAnnotations();
         // Download information about which coins have not yet been collected
-        userInfo.collection("Map")
+        userData.collection("Map")
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -347,7 +347,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     public void collectCoins(){
-        userInfo.collection("Map")
+        userData.collection("Map")
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
@@ -372,7 +372,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         // If our distance to coin is less than 25 metres, user can press button to collect coin
         if (distanceInMetres <= 25) {
             Toast.makeText(getApplicationContext(), "Collected a "+df.format(coin.getValue())+" "+coin.getCurrency()+" coin!", Toast.LENGTH_SHORT).show();
-            userInfo.collection("Wallet").document(coin.getId()).set(coin);
+            userData.collection("Wallet").document(coin.getId()).set(coin);
             return true;
         }
         return false;

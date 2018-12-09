@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         // Get current user
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        // If there is no user, return
+        // If there is no user, don't continue
         if (currentUser == null){
             return;
         }
@@ -101,8 +101,8 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         database.setFirestoreSettings(settings);
         // Get current user information
-        DocumentReference userInfo = database.collection("Users").document(currentUser.getUid());
-        userInfo.get().addOnCompleteListener(task -> {
+        DocumentReference userData = database.collection("Users").document(currentUser.getUid());
+        userData.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult().exists()){
                 // If user has not set a name yet, ask them to create one with an uncancellable alert dialog
                 if (task.getResult().getData().get("username") == null){
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                                     // If username is unique, hide the dialog and greet user
                                     .addOnSuccessListener(aVoid -> {
                                         Log.d(TAG, "Created username");
-                                        userInfo.update("username", etUsername.getText().toString())
+                                        userData.update("username", etUsername.getText().toString())
                                                 .addOnSuccessListener(aVoid2 -> Log.d(TAG, "Updated username"))
                                                 .addOnFailureListener(e -> Log.d(TAG, "Error updating Users document", e));
                                         dialog.hide();
@@ -163,5 +163,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Check if user is still logged in
+        if (mAuth.getCurrentUser() == null) {
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+        }
     }
 }

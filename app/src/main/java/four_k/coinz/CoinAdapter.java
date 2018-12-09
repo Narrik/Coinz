@@ -6,14 +6,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
 public class CoinAdapter extends ArrayAdapter<Coin> {
-    public CoinAdapter(Context context, ArrayList<Coin> users) {
-        super(context, 0, users);
+    private Context context;
+    private ArrayList<Coin> coins;
+
+    public CoinAdapter(Context context, ArrayList<Coin> coins) {
+        super(context, 0, coins);
+        this.context = context;
+        this.coins = coins;
     }
 
     @Override
@@ -28,6 +35,7 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
         ImageView currencyIcon = convertView.findViewById(R.id.ivCurrencyIcon);
         TextView coinInfo = convertView.findViewById(R.id.tvCoinInfo);
         TextView goldInfo = convertView.findViewById(R.id.tvGoldinfo);
+        CheckBox checkBox = convertView.findViewById(R.id.checkBox);
         // Populate the data into the template view using the data object
         DecimalFormat df = new DecimalFormat("#.##");
         String curCoin = df.format(coin.getValue())+" "+coin.getCurrency();
@@ -35,6 +43,13 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
         coinInfo.setText(curCoin);
         goldInfo.setText(curGold);
         currencyIcon.setImageDrawable(getContext().getDrawable(R.drawable.dolr_marker));
+        // Add on click listener for checkbox
+        checkBox.setOnClickListener(v -> {
+            final boolean isChecked = checkBox.isChecked();
+                if (isChecked){
+                    Toast.makeText(v.getContext(), coins.get(position).getValue()+" selected", Toast.LENGTH_SHORT).show();
+                }
+        });
         // Return the completed view to render on screen
         return convertView;
     }
