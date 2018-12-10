@@ -6,6 +6,23 @@
     android:layout_height="match_parent"
     tools:context=".MapboxActivity">
 
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            android:minHeight="?attr/actionBarSize"
+            android:theme="?attr/actionBarTheme" />
+    </android.support.design.widget.AppBarLayout>
+
 
     <com.mapbox.mapboxsdk.maps.MapView
         android:id="@+id/mapView"
@@ -14,7 +31,7 @@
         mapbox:layout_constraintBottom_toBottomOf="parent"
         mapbox:layout_constraintLeft_toLeftOf="parent"
         mapbox:layout_constraintRight_toRightOf="parent"
-        mapbox:layout_constraintTop_toTopOf="parent"
+        mapbox:layout_constraintTop_toTopOf="@+id/appBarLayout"
         mapbox:mapbox_cameraTargetLat="55.944"
         mapbox:mapbox_cameraTargetLng="-3.188396"
         mapbox:mapbox_cameraZoom="15"
@@ -35,7 +52,7 @@
         mapbox:layout_constraintEnd_toEndOf="parent"
         mapbox:layout_constraintHorizontal_bias="0.935"
         mapbox:layout_constraintStart_toStartOf="parent"
-        mapbox:layout_constraintTop_toTopOf="parent"
+        mapbox:layout_constraintTop_toBottomOf="@+id/appBarLayout"
         mapbox:layout_constraintVertical_bias="0.94"
         mapbox:srcCompat="@drawable/center" />
 

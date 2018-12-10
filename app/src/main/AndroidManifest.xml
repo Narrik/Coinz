@@ -26,10 +26,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MapboxActivity" />
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".ChatActivity" />
-        <activity android:name=".BankActivity"></activity>
+        <activity android:name=".MapboxActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".MainActivity"/>
+        <activity android:name=".LoginActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".MainActivity"/>
+        <activity android:name=".ChatActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".MainActivity"/>
+        <activity android:name=".BankActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".MainActivity"/>
     </application>
 
 </manifest>

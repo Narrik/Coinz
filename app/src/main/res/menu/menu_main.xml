@@ -2,9 +2,26 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="four_k.coinz.MainActivity">
+
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never" />
+        android:id="@+id/rates"
+        android:title="@string/rates"
+        android:icon="@drawable/rates"
+        app:showAsAction="always">
+        <menu>
+            <item android:title="@string/exchangeRates"/>
+            <item android:title="@string/dolr"
+                android:id="@+id/dolrRate"
+                android:icon="@drawable/dolr_icon"/>
+            <item android:title="@string/quid"
+                android:id="@+id/quidRate"
+                android:icon="@drawable/quid_icon"/>
+            <item android:title="@string/peny"
+                android:id="@+id/penyRate"
+                android:icon="@drawable/peny_icon"/>
+            <item android:title="@string/shil"
+                android:id="@+id/shilRate"
+                android:icon="@drawable/shil_icon"/>
+        </menu>
+    </item>
 </menu>

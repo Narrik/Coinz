@@ -9,35 +9,25 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
-import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.SetOptions;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEnginePriority;
 import com.mapbox.android.core.location.LocationEngineProvider;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
@@ -53,13 +43,11 @@ import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nullable;
 
-public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener, DownloadFileTask.AsyncResponse{
+public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener{
 
     private static final String TAG = "MapboxActivity";
     private MapView mapView;
@@ -72,7 +60,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private FirebaseAuth mAuth;
     private FirebaseFirestore database;
     private DocumentReference userData;
-    private String today;
     private Icon dolrIcon;
     private Icon quidIcon;
     private Icon penyIcon;
@@ -81,6 +68,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Get mapbox instance
         Mapbox.getInstance(this,getString(R.string.access_token));
         setContentView(R.layout.activity_mapbox);
         mapView = findViewById(R.id.mapView);
@@ -91,6 +79,12 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     // OnMapReadyCallback
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
+        // Display activity name and back arrow on toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Map");
+        // Set up the mapbox
         if (mapboxMap == null){
             Log.d(TAG, "[onMapReady] mapBox is null");
         } else {
@@ -106,14 +100,12 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                     fab.hide();
                 }
             });
-
             // Show locate user button if user moves camera
             map.addOnCameraMoveStartedListener(reason -> {
                 if (reason == 1){
                     fab.show();
                 }
             });
-
             // Create icons of different color for different currencies
             IconFactory iconFactory = IconFactory.getInstance(this);
             Bitmap dolrBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.dolr_marker);
@@ -124,12 +116,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             penyIcon = iconFactory.fromBitmap(penyBitmap);
             quidIcon = iconFactory.fromBitmap(quidBitmap);
             shilIcon = iconFactory.fromBitmap(shilBitmap);
-
-            // Create string with today's date for comparing and downloading maps
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-            LocalDate todayDate = LocalDate.now();
-            today = dtf.format(todayDate);
-
             // Get current user
             mAuth = FirebaseAuth.getInstance();
             FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -137,7 +123,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 Log.d(TAG,"Cannot load maps if user is not logged in");
                 finish();
             }
-
             // Access our database
             database = FirebaseFirestore.getInstance();
             FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
@@ -146,75 +131,11 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             database.setFirestoreSettings(settings);
             // Get current user information
             userData = database.collection("Users").document(currentUser.getUid());
-
-            // Check user's Map collection for information on when map was last downloaded (on firebase)
-            userData.collection("Map").document("LastDownload").get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult().exists()){
-                    // If a map was never downloaded, or wasn't downloaded today, get today's map and update the field
-                    if (task.getResult().getData().get("date") == null || !(task.getResult().getData().get("date").equals(today))) {
-                        Log.d(TAG,"Updating map");
-                        removeOldCoins();
-                        Map<String, String> lastDownload = new HashMap<>();
-                        lastDownload.put("date", today);
-                        userData.collection("Map").document("LastDownload").set(lastDownload);
-                        downloadTodayMap();
-                    }
-                    // If user doesn't have a Map collection, create one and add today's map
-                } else {
-                    Log.d(TAG, "Couldn't check LastDownload date");
-                    Map<String,String> lastDownload = new HashMap<>();
-                    lastDownload.put("date",today);
-                    userData.collection("Map").document("LastDownload").set(lastDownload);
-                    downloadTodayMap();
-                }
-            });
             // Draw coins which have not yet been collected
             drawCoins();
             // Make location info available
             enableLocation();
         }
-    }
-
-    private void removeOldCoins() {
-        userData.collection("Map")
-                .whereGreaterThanOrEqualTo("value",0)
-                .get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                Log.d(TAG,"Removed old coins");
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    document.getReference().delete();
-                }
-            } else {
-                Log.d(TAG, "Error getting documents: ", task.getException());
-            }
-        });
-    }
-
-    private void downloadTodayMap() {
-        DownloadFileTask task = new DownloadFileTask();
-        task.delegate = this;
-        task.execute("http://homepages.inf.ed.ac.uk/stg/coinz/"+today+"/coinzmap.geojson");
-    }
-
-    // Async DownloadFileTask callback
-    @Override
-    @SuppressWarnings("ConstantConditions")
-    public void processFinish(String s){
-        // Extract Feature collection from today's geoJson
-        FeatureCollection fc = FeatureCollection.fromJson(s);
-        if (fc.features() != null) {
-            // For each coin (feature), add a document with the coin id as document name and Coin object
-            for (Feature f : fc.features()) {
-                Coin coin = new Coin(f.properties().get("id").getAsString(),
-                                     f.properties().get("value").getAsDouble(),
-                                     f.properties().get("currency").getAsString(),
-                                     ((Point) f.geometry()).longitude(),
-                                     ((Point) f.geometry()).latitude());
-                userData.collection("Map").document(coin.getId()).set(coin);
-            }
-        }
-        // Draw coins available for today
-        drawCoins();
     }
 
 
@@ -236,7 +157,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     private void drawCoin(Coin coin){
-        DecimalFormat df = new DecimalFormat("#.##");
+        DecimalFormat df = new DecimalFormat("0.00");
         // Check what currency a coin is
         switch (coin.getCurrency()) {
             case "DOLR":
@@ -318,8 +239,9 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     private void setCameraPosition(Location location) {
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
-                location.getLongitude()), 16));
+                location.getLongitude()), 17));
     }
+
     // LocationEngineListener
     @Override
     @SuppressWarnings("MissingPermission")
@@ -364,7 +286,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     public boolean collectCoin(Coin coin){
-        DecimalFormat df = new DecimalFormat("#.##");
+        DecimalFormat df = new DecimalFormat("0.00");
         Location coinLocation = new Location("");
         coinLocation.setLatitude(coin.getLatitude());
         coinLocation.setLongitude(coin.getLongitude());
@@ -460,4 +382,34 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         mapView.onDestroy();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        DecimalFormat df = new DecimalFormat("0.00");
+        int id = item.getItemId();
+        if (id == R.id.rates) {
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null){
+                    Map exchangeRates = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                } else {
+                    Log.d(TAG, "Get failed with "+task.getException());
+                }
+            });
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }

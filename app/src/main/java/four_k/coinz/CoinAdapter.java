@@ -39,10 +39,20 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
         // Populate the data into the template view using the data object
         DecimalFormat df = new DecimalFormat("#.##");
         String curCoin = df.format(coin.getValue())+" "+coin.getCurrency();
-        String curGold = "worth x gold";
+        String curGold = "worth "+ " "  +" gold";
         coinInfo.setText(curCoin);
         goldInfo.setText(curGold);
-        currencyIcon.setImageDrawable(getContext().getDrawable(R.drawable.dolr_marker));
+        // Set currency icon based on currency
+        if (coin.getCurrency().equals("DOLR")) {
+            currencyIcon.setImageDrawable(getContext().getDrawable(R.drawable.dolr_icon));
+        } else if (coin.getCurrency().equals("QUID")) {
+            currencyIcon.setImageDrawable(getContext().getDrawable(R.drawable.quid_icon));
+        } else if (coin.getCurrency().equals("PENY")) {
+            currencyIcon.setImageDrawable(getContext().getDrawable(R.drawable.peny_icon));
+        } else if (coin.getCurrency().equals("SHIL")) {
+            currencyIcon.setImageDrawable(getContext().getDrawable(R.drawable.shil_icon));
+        }
+
         // Add on click listener for checkbox
         checkBox.setOnClickListener(v -> {
             final boolean isChecked = checkBox.isChecked();

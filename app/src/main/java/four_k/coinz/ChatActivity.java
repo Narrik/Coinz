@@ -1,14 +1,18 @@
 package four_k.coinz;
 
+import android.icu.text.DecimalFormat;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -26,8 +30,10 @@ public class ChatActivity extends AppCompatActivity {
     private static final String DOCUMENT_KEY = "Message";
     private static final String NAME_FIELD = "Name";
     private static final String TEXT_FIELD = "Text";
-    private DocumentReference firestoreChat;
+    private FirebaseAuth mAuth;
     private FirebaseFirestore database;
+    private DocumentReference firestoreChat;
+    private DocumentReference userData;
     private EditText nameText;
     private EditText messageText;
     private TextView messageLast;
@@ -37,16 +43,33 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        // Display activity name and back arrow on toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Chat");
+        // Get the user
+        // Get current user
+        mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        // If there is no user, don't continue
+        if (currentUser == null){
+            return;
+        }
+        // Access our database
         database = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setTimestampsInSnapshotsEnabled(true)
+                .build();
+        database.setFirestoreSettings(settings);
+        // Get current user information
+        userData = database.collection("Users").document(currentUser.getUid());
+        // Message
         nameText = findViewById(R.id.nameText);
         messageText = findViewById(R.id.messageText);
         messageLast = findViewById(R.id.messageLast);
         FloatingActionButton fab = findViewById(R.id.floatingActionButton2);
         fab.setOnClickListener(view -> sendMessage());
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        database.setFirestoreSettings(settings);
         firestoreChat = database.collection(COLLECTION_KEY).document(DOCUMENT_KEY);
         realtimeUpdateListener();
     }
@@ -90,5 +113,37 @@ public class ChatActivity extends AppCompatActivity {
                 messageLast.setText(incoming);
             }
         });*/
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        DecimalFormat df = new DecimalFormat("0.00");
+        int id = item.getItemId();
+        if (id == R.id.rates) {
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null){
+                    Map exchangeRates = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                } else {
+                    Log.d(TAG, "Get failed with "+task.getException());
+                }
+            });
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }

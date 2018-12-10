@@ -16,4 +16,12 @@
     <string name="bank">Bank</string>
     <string name="sign_out">sign out</string>
     <string name="chat">Chat</string>
+    <string name="coininfo">coininfo</string>
+    <string name="goldinfo">goldinfo</string>
+    <string name="rates">Rates</string>
+    <string name="dolr">DOLR</string>
+    <string name="shil">SHIL</string>
+    <string name="peny">PENY</string>
+    <string name="quid">QUID</string>
+    <string name="exchangeRates">Exchange rates at the bank:</string>
 </resources>
