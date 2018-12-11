@@ -1,6 +1,7 @@
 package four_k.coinz;
 
 import android.icu.text.DecimalFormat;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,13 +9,13 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.AbsListView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -25,8 +26,6 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class SpareChangeActivity extends AppCompatActivity {
@@ -35,7 +34,7 @@ public class SpareChangeActivity extends AppCompatActivity {
     private FirebaseFirestore database;
     private DocumentReference userData;
     private CoinAdapter adapter;
-    private Coin sentCoin;
+    private EditText etReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +44,7 @@ public class SpareChangeActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Bank");
+        getSupportActionBar().setTitle("Send Spare Change");
         // Get current user
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -87,50 +86,65 @@ public class SpareChangeActivity extends AppCompatActivity {
                 Log.d(TAG, "Error getting documents: ", task.getException());
             }
         });
-        EditText receiver = findViewById(R.id.etReceiver);
+        etReceiver = findViewById(R.id.etReceiver);
         FloatingActionButton sendSpareChange = findViewById(R.id.sendSpareChange);
         sendSpareChange.setOnClickListener(v -> {
-            // Check user wants to send at least 1 coin
-            if (adapter.getSelectedCoins().isEmpty()) {
-                Toast.makeText(this, "Select at least 1 Coin", Toast.LENGTH_SHORT).show();
-            } else {
-                // Send coin to user whose username is written in the editText field
-                for (String coinId : adapter.getSelectedCoins()) {
-                    sendCoin(receiver.getText().toString(), coinId);
-                }
-            }
+            if (MisclickPreventer.cantClickAgain()){ return; }
+            // Send gold to another user
+            sendSpareChangeGold(etReceiver.getText().toString());
         });
     }
 
-    private void sendCoin(String receiver, String coinId) {
-        // Get all information about the coin we are sending
-        database.collection("Users")
-                .whereEqualTo("username", receiver)
-                .get().addOnCompleteListener(task -> {
-            // Check if user exists
-            if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                // Get information about the coin we are sending
-                userData.collection("Wallet").document(coinId).get().addOnCompleteListener(task2 -> {
-                            if (task2.isSuccessful() && task2.getResult() != null) {
-                                Log.d(TAG, "Retrieving coin information");
-                                sentCoin = task2.getResult().toObject(Coin.class);
-                                // Remove the coin from user's wallet
-                                userData.collection("Wallet").document(coinId).delete();
-                                // Send coin to receiver
-                                Log.d(TAG, "Sending coins to " + receiver);
-                                for (QueryDocumentSnapshot document : task.getResult()) {
-                                    document.getReference().collection("Wallet").document(coinId).set(sentCoin);
-                                }
-                                // After sending coin return to chat
-                                Toast.makeText(this, "Spare change sent!", Toast.LENGTH_SHORT).show();
-                                finish();
-                            }
+    private void sendSpareChangeGold(String receiver) {
+        if (etReceiver.getText().toString().equals("")){
+            etReceiver.setError("Username cannot be empty");
+            return;
+        }
+        // Check user wants to send at least 1 coin
+        if (adapter.getSelectedCoins().isEmpty()) {
+            Toast.makeText(this, "Select at least 1 Coin", Toast.LENGTH_SHORT).show();
+        } else {
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                    // Check user isn't sending gold to himself
+                    if (task.getResult().getData().get("username").toString().equals(receiver)) {
+                        Toast.makeText(this, "Cannot send spare change to yourself!", Toast.LENGTH_SHORT).show();
+                        // User is sending GOLD to a different user
+                    } else {
+                        // Remove every coin from user's wallet
+                        for (String coinId : adapter.getSelectedCoins()) {
+                            userData.collection("Wallet").document(coinId).delete();
                         }
-                );
-            } else {
-                Toast.makeText(this, "No user with such username exists", Toast.LENGTH_SHORT).show();
-            }
-        });
+                        // Round up the gold value
+                        int roundedUpGold = new Double(adapter.getSelectedCoinsGoldValue() + 0.5d).intValue();
+                        // Get receiver's current gold and increase it
+                        database.collection("Users")
+                                .whereEqualTo("username", receiver)
+                                .get().addOnCompleteListener(task1 -> {
+                                    if (task1.isSuccessful() && task1.getResult() != null && !task1.getResult().isEmpty()){
+                                        Log.d(TAG, "Sending gold to "+receiver);
+                                        // Because usernames are unique there is only 1 receiver
+                                        for (QueryDocumentSnapshot document : task1.getResult()) {
+                                            document.getReference().get().addOnCompleteListener(task2 -> {
+                                                if (task2.isSuccessful() && task2.getResult() != null && task2.getResult().getData() != null){
+                                                    Log.d(TAG,"Increasing "+receiver+" gold");
+                                                    int currentGold = Integer.parseInt(task2.getResult().getData().get("GOLD").toString());
+                                                    document.getReference().update("GOLD",currentGold+roundedUpGold);
+                                                    // After sending coins return to main menu
+                                                    Toast.makeText(this, "Coins sent!", Toast.LENGTH_SHORT).show();
+                                                    finish();
+                                                }
+                                            });
+                                        }
+                                } else {
+                                        // No user found
+                                        Toast.makeText(this, "No user with such username exists", Toast.LENGTH_SHORT).show();
+                                    }
+                            });
+                        }
+                    }
+            });
+        }
     }
 
     @Override
@@ -148,14 +162,28 @@ public class SpareChangeActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         DecimalFormat df = new DecimalFormat("0.00");
         int id = item.getItemId();
+        // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null) {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map exchangeRates = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(exchangeRates.get("DOLR").toString())) + " GOLD");
                     item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(exchangeRates.get("QUID").toString())) + " GOLD");
                     item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = " + df.format(Double.parseDouble(exchangeRates.get("PENY").toString())) + " GOLD");
                     item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = " + df.format(Double.parseDouble(exchangeRates.get("SHIL").toString())) + " GOLD");
+                } else {
+                    Log.d(TAG, "Get failed with " + task.getException());
+                }
+            });
+            return true;
+        }
+        // Show user's gold and bank in allowance
+        if (id == R.id.goldBag){
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                    Map userInfo = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
                 } else {
                     Log.d(TAG, "Get failed with " + task.getException());
                 }

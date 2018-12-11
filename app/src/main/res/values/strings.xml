@@ -28,4 +28,13 @@
     <string name="message">Message</string>
     <string name="send_spare_change_to_another_user">Send spare change to another user!</string>
     <string name="send_spare_change_to">Send spare change to</string>
+    <string name="gold_bag">Gold Bag</string>
+    <string name="gold">GOLD</string>
+    <string name="bank_allowance">Bank Allowance</string>
+    <string name="your_gold_and_coin_bank_in_limit">Your Gold and coin bank-in limit:</string>
+    <string name="switch_to_spare_change">Switch to Spare Change</string>
+    <string name="bank_in_selected_coins">Bank-In selected coins</string>
+    <string name="_25_remaining">/25 remaining</string>
+    <string name="nolimit">No Limit</string>
+    <string name="loading">loading...</string>
 </resources>

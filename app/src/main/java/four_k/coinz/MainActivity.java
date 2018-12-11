@@ -2,6 +2,7 @@ package four_k.coinz;
 
 import android.content.Intent;
 import android.icu.text.DecimalFormat;
+import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
@@ -31,7 +32,10 @@ import org.json.JSONObject;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements DownloadFileTask.AsyncResponse {
@@ -85,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
                 Toast.makeText(this, "You aren't logged in!", Toast.LENGTH_SHORT).show();
             }
         });
-
+        createUsername();
     }
 
     @Override
@@ -112,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         // Get current user information
         userData = database.collection("Users").document(currentUser.getUid());
         userData.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null){
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
                 // If user has not set a name yet, ask them to create one with an uncancellable alert dialog
                 if (task.getResult().getData().get("username").equals("")){
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
@@ -135,30 +139,37 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
                                     // If username is unique, hide the dialog and greet user
                                     .addOnSuccessListener(aVoid -> {
                                         Log.d(TAG, "Created username");
+                                        dialog.hide();
                                         userData.update("username", etUsername.getText().toString())
                                                 .addOnSuccessListener(aVoid2 -> Log.d(TAG, "Updated username"))
                                                 .addOnFailureListener(e -> Log.d(TAG, "Error updating Users document", e));
-                                        dialog.hide();
                                         Toast.makeText(getApplicationContext(), "Welcome "+etUsername.getText().toString(), Toast.LENGTH_SHORT).show();
                                     })
                                     // If username is in use, warn the user
                                     .addOnFailureListener(e -> etUsername.setError("Username already in use"));
+                            Log.d(TAG,"Calling getInformation");
+                            getInformation();
                         }
                     });
+                } else {
+                    Log.d(TAG,"Calling getInformation");
+                    getInformation();
                 }
             } else {
                 Log.d(TAG, "Get failed with "+task.getException());
             }
         });
+    }
+    private void getInformation() {
         // Create string with today's date for comparing and downloading maps
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-        LocalDate todayDate = LocalDate.now();
+        SimpleDateFormat dtf = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
+        Date todayDate = Calendar.getInstance().getTime();
         today = dtf.format(todayDate);
         // Check user's Map collection for information on when map was last downloaded (on firebase)
         userData.collection("Map").document("LastDownload").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null){
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
                 // If a map was never downloaded, or wasn't downloaded today, get today's map and remove old coins
-                if (task.getResult().getData().get("date") == null || !(task.getResult().getData().get("date").equals(today))) {
+                if (!task.getResult().getData().containsKey("date") || !(task.getResult().getData().get("date").equals(today))) {
                     Log.d(TAG,"Updating map");
                     // Reset today's bank in allowance to 25 coins
                     userData.update("bankLimit",25);
@@ -272,20 +283,33 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         // as you specify a parent activity in AndroidManifest.xml.
         DecimalFormat df = new DecimalFormat("0.00");
         int id = item.getItemId();
-
+        // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null){
-                    Map exchangeRates = task.getResult().getData();
-                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                if (task.isSuccessful() && task.getResult() != null) {
+                    Map userInfo = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(userInfo.get("DOLR").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(userInfo.get("QUID").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = " + df.format(Double.parseDouble(userInfo.get("PENY").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = " + df.format(Double.parseDouble(userInfo.get("SHIL").toString())) + " GOLD");
                 } else {
-                    Log.d(TAG, "Get failed with "+task.getException());
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;
+        }
+        // Show user's gold and bank in allowance
+        if (id == R.id.goldBag){
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    Map userInfo = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                } else {
+                    Log.d(TAG, "Get failed with " + task.getException());
+                }
+            });
+        return true;
         }
 
         return super.onOptionsItemSelected(item);

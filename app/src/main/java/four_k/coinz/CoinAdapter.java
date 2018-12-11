@@ -30,6 +30,7 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
     private final String TAG = "Coin Adapter";
     private boolean[] checkBoxState;
     private HashMap<Coin, Boolean> checkedForCoin = new HashMap<>();
+    private Map userInfo;
 
 
     public CoinAdapter(Context context, ArrayList<Coin> coins) {
@@ -84,9 +85,10 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
         // Show GOLD value based on exchange rates
         userData.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null){
-                Map exchangeRates = task.getResult().getData();
+                // Get user to info to get exchange rates
+                userInfo = task.getResult().getData();
                 // Get coin value in gold by multiplying coin's value and it's currency exchange rate
-                String coinValue = df.format(coin.getValue() * Double.parseDouble(exchangeRates.get(coin.getCurrency()).toString()));
+                String coinValue = df.format(coin.getValue() * Double.parseDouble(userInfo.get(coin.getCurrency()).toString()));
                 goldInfo.setText("= "+coinValue+" GOLD");
             } else {
                 Log.d(TAG, "Get failed with "+task.getException());
@@ -130,5 +132,15 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
             }
         }
         return selectedCoins;
+    }
+
+    public Double getSelectedCoinsGoldValue(){
+        Double totalGoldValue = 0d;
+        for (Map.Entry<Coin, Boolean> pair : checkedForCoin.entrySet()) {
+            if(pair.getValue()) {
+                totalGoldValue += pair.getKey().getValue() * Double.parseDouble(userInfo.get(pair.getKey().getCurrency()).toString());
+            }
+        }
+        return totalGoldValue;
     }
 }

@@ -4,10 +4,25 @@
     tools:context="four_k.coinz.MainActivity">
 
     <item
+        android:id="@+id/goldBag"
+        android:icon="@drawable/gold_bag"
+        android:title="@string/gold_bag"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item android:title="@string/your_gold_and_coin_bank_in_limit"/>
+            <item android:title="@string/gold"
+                android:id="@+id/gold"
+                android:icon="@drawable/gold"/>
+            <item android:title="@string/bank_allowance"
+                android:id="@+id/bankAllowance"
+                android:icon="@drawable/bank_allowance"/>
+        </menu>
+    </item>
+    <item
         android:id="@+id/rates"
         android:title="@string/rates"
         android:icon="@drawable/rates"
-        app:showAsAction="always">
+        app:showAsAction="ifRoom">
         <menu>
             <item android:title="@string/exchangeRates"/>
             <item android:title="@string/dolr"

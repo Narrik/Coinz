@@ -106,14 +106,14 @@ public class ChatActivity extends AppCompatActivity {
         newMessage.put("messageText", messageText.getText().toString());
         messageText.setText("");
         userData.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null){
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
                 Map userInfo = task.getResult().getData();
                 // Fill in message information as sender, messageText and time of creation
                 newMessage.put("sender",userInfo.get("username").toString());
                 newMessage.put("created", FieldValue.serverTimestamp());
                 database.collection("Chat").add(newMessage)
                         .addOnSuccessListener(documentReference ->{
-                                Toast.makeText(getApplicationContext(),"Message sent!",Toast.LENGTH_SHORT).show();
+                                Log.d(TAG,"Message sent");
                         })
                         .addOnFailureListener(e -> {
                             Log.d(TAG,e.getMessage());
@@ -140,9 +140,10 @@ public class ChatActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         DecimalFormat df = new DecimalFormat("0.00");
         int id = item.getItemId();
+        // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
                     Map exchangeRates = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
                     item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
@@ -150,6 +151,19 @@ public class ChatActivity extends AppCompatActivity {
                     item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
                 } else {
                     Log.d(TAG, "Get failed with "+task.getException());
+                }
+            });
+            return true;
+        }
+        // Show user's gold and bank in allowance
+        if (id == R.id.goldBag){
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                    Map userInfo = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                } else {
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;

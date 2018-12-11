@@ -139,12 +139,12 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     public void drawCoins(){
         // Remove previous markers as this method is called to update when a coin is collected
-        map.removeAnnotations();
         // Download information about which coins have not yet been collected
         userData.collection("Map")
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
+                map.removeAnnotations();
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     drawCoin(document.toObject(Coin.class));
                 }
@@ -395,9 +395,10 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         // as you specify a parent activity in AndroidManifest.xml.
         DecimalFormat df = new DecimalFormat("0.00");
         int id = item.getItemId();
+        // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
                     Map exchangeRates = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
                     item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
@@ -409,6 +410,20 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             });
             return true;
         }
+        // Show user's gold and bank in allowance
+        if (id == R.id.goldBag){
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                    Map userInfo = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                } else {
+                    Log.d(TAG, "Get failed with " + task.getException());
+                }
+            });
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 }

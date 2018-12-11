@@ -1,6 +1,8 @@
 package four_k.coinz;
 
 import android.icu.text.DecimalFormat;
+import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -8,24 +10,30 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AbsListView;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Map;
 
 public class BankActivity extends AppCompatActivity {
 
     private static final String TAG = "BankActivity";
     private DocumentReference userData;
+    private CoinAdapter adapter;
 
     @Override
 
@@ -59,26 +67,60 @@ public class BankActivity extends AppCompatActivity {
                 .orderBy("value", Query.Direction.DESCENDING)
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                if (task.getResult().isEmpty()){
-                    // If user has no coins, ask him to collect some first
-                    Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        if (task.getResult().isEmpty()) {
+                            // If user has no coins, ask him to collect some first
+                            Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
+                        }
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            coinsInWallet.add(document.toObject(Coin.class));
+                            Log.d(TAG, "Adding a coin");
+                        }
+                        // Create the adapter to convert the array to views
+                        adapter = new CoinAdapter(this, coinsInWallet);
+                        // Attach the adapter to a ListView
+                        ListView listView = findViewById(R.id.list_view);
+                        listView.setAdapter(adapter);
+                        listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
+                    } else {
+                        Log.d(TAG, "Error getting documents: ", task.getException());
+                    }
+                });
+            Button btnBankIn = findViewById(R.id.btnBankIn);
+            btnBankIn.setOnClickListener(v -> {
+                // Prevents user from spam clicking
+                if (MisclickPreventer.cantClickAgain()) {
+                    return;
                 }
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    coinsInWallet.add(document.toObject(Coin.class));
-                    Log.d(TAG,"Adding a coin");
-                }
-                // Create the adapter to convert the array to views
-                CoinAdapter adapter = new CoinAdapter(this, coinsInWallet);
-                // Attach the adapter to a ListView
-                ListView listView = findViewById(R.id.list_view);
-                listView.setAdapter(adapter);
-                listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
+                // Bank coins into gold
+                bankCoins();
+            });
+
+        }
+
+        public void bankCoins(){
+            if (adapter.getSelectedCoins().isEmpty()) {
+                Toast.makeText(this, "Select at least 1 Coin", Toast.LENGTH_SHORT).show();
             } else {
-                Log.d(TAG, "Error getting documents: ", task.getException());
+                // Remove every coin from user's wallet
+                for (String coinId : adapter.getSelectedCoins()){
+                    userData.collection("Wallet").document(coinId).delete();
+                }
+                // Round up the gold value
+                int roundedUpGold = new Double (adapter.getSelectedCoinsGoldValue() + 0.5d).intValue();
+                // Get user current gold and increase it
+                userData.get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
+                        Log.d(TAG,"Increasing user gold");
+                        int currentGold = Integer.parseInt(task.getResult().getData().get("GOLD").toString());
+                        userData.update("GOLD",currentGold+roundedUpGold);
+                    }
+                });
+                // After banking coin return to main menu
+                Toast.makeText(this, "Coins banked in!", Toast.LENGTH_SHORT).show();
+                finish();
             }
-        });
-    }
+        }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -95,9 +137,10 @@ public class BankActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         DecimalFormat df = new DecimalFormat("0.00");
         int id = item.getItemId();
+        // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
                     Map exchangeRates = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
                     item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
@@ -105,6 +148,19 @@ public class BankActivity extends AppCompatActivity {
                     item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
                 } else {
                     Log.d(TAG, "Get failed with "+task.getException());
+                }
+            });
+            return true;
+        }
+        // Show user's gold and bank in allowance
+        if (id == R.id.goldBag){
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                    Map userInfo = task.getResult().getData();
+                    item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                } else {
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;
