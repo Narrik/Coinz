@@ -24,4 +24,8 @@
     <string name="peny">PENY</string>
     <string name="quid">QUID</string>
     <string name="exchangeRates">Exchange rates at the bank:</string>
+    <string name="name">Name</string>
+    <string name="message">Message</string>
+    <string name="send_spare_change_to_another_user">Send spare change to another user!</string>
+    <string name="send_spare_change_to">Send spare change to</string>
 </resources>

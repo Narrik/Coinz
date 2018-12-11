@@ -81,9 +81,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         // Sign in success, update UI with the signed-in user's information
                         FirebaseUser currentUser = mAuth.getCurrentUser();
                         Log.d(TAG, "createUserWithEmail:success");
-                        Map<String,String> userInfo = new HashMap<>();
+                        Map<String,Object> userInfo = new HashMap<>();
                         userInfo.put("email",currentUser.getEmail());
-                        userInfo.put("username",null);
+                        userInfo.put("username","");
+                        userInfo.put("GOLD",0);
+                        userInfo.put("bankLimit",25);
                         database.collection("Users").document(currentUser.getUid()).set(userInfo);
                         finish();
                     } else {

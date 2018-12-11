@@ -1,6 +1,5 @@
 package four_k.coinz;
 
-import android.app.ActionBar;
 import android.icu.text.DecimalFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,7 +8,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AbsListView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -27,11 +25,10 @@ import java.util.Map;
 public class BankActivity extends AppCompatActivity {
 
     private static final String TAG = "BankActivity";
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore database;
     private DocumentReference userData;
 
     @Override
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bank);
@@ -40,29 +37,31 @@ public class BankActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Bank");
-        // Construct the data source
-        ArrayList<Coin> coinsInWallet = new ArrayList<>();
         // Get current user
-        mAuth = FirebaseAuth.getInstance();
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         // If there is no user, don't continue
         if (currentUser == null){
-            return;
+            Log.d(TAG,"Cannot load bank if user is not logged in");
+            finish();
         }
         // Access our database
-        database = FirebaseFirestore.getInstance();
+        FirebaseFirestore database = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setTimestampsInSnapshotsEnabled(true)
                 .build();
         database.setFirestoreSettings(settings);
         // Get current user information
         userData = database.collection("Users").document(currentUser.getUid());
+        // Construct the data source for listView
+        ArrayList<Coin> coinsInWallet = new ArrayList<>();
         userData.collection("Wallet")
                 .orderBy("value", Query.Direction.DESCENDING)
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 if (task.getResult().isEmpty()){
+                    // If user has no coins, ask him to collect some first
                     Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
                 }
                 for (QueryDocumentSnapshot document : task.getResult()) {
@@ -89,6 +88,7 @@ public class BankActivity extends AppCompatActivity {
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long

@@ -41,8 +41,6 @@ import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.CameraMode;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -57,8 +55,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     private LocationEngine locationEngine;
     private LocationLayerPlugin locationLayerPlugin;
     private Location currentLocation;
-    private FirebaseAuth mAuth;
-    private FirebaseFirestore database;
     private DocumentReference userData;
     private Icon dolrIcon;
     private Icon quidIcon;
@@ -77,6 +73,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
     // OnMapReadyCallback
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
         // Display activity name and back arrow on toolbar
@@ -117,14 +114,15 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             quidIcon = iconFactory.fromBitmap(quidBitmap);
             shilIcon = iconFactory.fromBitmap(shilBitmap);
             // Get current user
-            mAuth = FirebaseAuth.getInstance();
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
             FirebaseUser currentUser = mAuth.getCurrentUser();
+            // If there is no user, don't continue
             if (currentUser == null){
                 Log.d(TAG,"Cannot load maps if user is not logged in");
                 finish();
             }
             // Access our database
-            database = FirebaseFirestore.getInstance();
+            FirebaseFirestore database = FirebaseFirestore.getInstance();
             FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                     .setTimestampsInSnapshotsEnabled(true)
                     .build();
@@ -239,7 +237,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     private void setCameraPosition(Location location) {
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(),
-                location.getLongitude()), 17));
+                location.getLongitude()), 16));
     }
 
     // LocationEngineListener
@@ -389,6 +387,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         return true;
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will

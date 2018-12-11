@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         userData.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null){
                 // If user has not set a name yet, ask them to create one with an uncancellable alert dialog
-                if (task.getResult().getData().get("username") == null){
+                if (task.getResult().getData().get("username").equals("")){
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
                     View dialogView = getLayoutInflater().inflate(R.layout.dialog_username,null);
                     EditText etUsername = dialogView.findViewById(R.id.etUsername);
@@ -156,10 +156,13 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         today = dtf.format(todayDate);
         // Check user's Map collection for information on when map was last downloaded (on firebase)
         userData.collection("Map").document("LastDownload").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult().exists()){
+            if (task.isSuccessful() && task.getResult() != null){
                 // If a map was never downloaded, or wasn't downloaded today, get today's map and remove old coins
                 if (task.getResult().getData().get("date") == null || !(task.getResult().getData().get("date").equals(today))) {
                     Log.d(TAG,"Updating map");
+                    // Reset today's bank in allowance to 25 coins
+                    userData.update("bankLimit",25);
+                    // Remove yesterday's coins
                     removeOldCoinsFromWallet();
                     // DownloadTodayMap() called after old coins are removed
                     removeOldCoinsFromMap();
