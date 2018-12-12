@@ -10,11 +10,12 @@ public class Coin {
 
     @SuppressWarnings("unused")
     // Necessary due to firebase
-    public Coin() {}
+    public Coin() {
+    }
 
     @SuppressWarnings("WeakerAccess")
     // Necessary due to firebase
-    public Coin(String id, double value, String currency, double longitude, double latitude){
+    public Coin(String id, double value, String currency, double longitude, double latitude) {
         this.id = id;
         this.value = value;
         this.currency = currency;

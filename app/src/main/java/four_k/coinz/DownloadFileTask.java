@@ -9,7 +9,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class DownloadFileTask extends AsyncTask<String,Void,String> {
+public class DownloadFileTask extends AsyncTask<String, Void, String> {
 
     public interface AsyncResponse {
         void processFinish(String output);
@@ -19,15 +19,15 @@ public class DownloadFileTask extends AsyncTask<String,Void,String> {
 
 
     @Override
-    protected String doInBackground(String... urls){
-        try{
+    protected String doInBackground(String... urls) {
+        try {
             return loadFromFileNetwork(urls[0]);
-        } catch (IOException e){
+        } catch (IOException e) {
             return "Unable to load content, check your network connection";
         }
     }
 
-    private String loadFromFileNetwork(String urlString) throws IOException{
+    private String loadFromFileNetwork(String urlString) throws IOException {
         return readStream(downloadUrl(new URL(urlString)));
     }
 
@@ -42,7 +42,7 @@ public class DownloadFileTask extends AsyncTask<String,Void,String> {
     }
 
     @NonNull
-    private String readStream(InputStream stream) throws IOException{
+    private String readStream(InputStream stream) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
         int length;
@@ -53,7 +53,7 @@ public class DownloadFileTask extends AsyncTask<String,Void,String> {
     }
 
     @Override
-    protected void onPostExecute(String result){
+    protected void onPostExecute(String result) {
         super.onPostExecute(result);
         delegate.processFinish(result);
     }

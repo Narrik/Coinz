@@ -109,14 +109,14 @@ public class SpareChangeActivity extends AppCompatActivity {
         }
         userData.get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
-                    // Check user isn't sending gold to himself
+                // Check user isn't sending gold to himself
                 if (task.getResult().getData().get("username").toString().equals(receiver)) {
                     Toast.makeText(this, "Cannot send spare change to yourself!", Toast.LENGTH_SHORT).show();
                     // Check user has already banked-in all of his coin allowance
-                } else if (Integer.parseInt(task.getResult().getData().get("bankLimit").toString()) > 0){
+                } else if (Integer.parseInt(task.getResult().getData().get("bankLimit").toString()) > 0) {
                     Toast.makeText(this, "Cannot send spare change before you've used up your daily bank-in limit," +
                             " it's SPARE change after all!", Toast.LENGTH_LONG).show();
-                }else {
+                } else {
                     // Remove every coin from user's wallet
                     for (String coinId : adapter.getSelectedCoins()) {
                         userData.collection("Wallet").document(coinId).delete();

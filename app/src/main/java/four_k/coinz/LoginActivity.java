@@ -16,7 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LoginActivity extends AppCompatActivity{
+public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
     private FirebaseAuth mAuth;
@@ -41,13 +41,17 @@ public class LoginActivity extends AppCompatActivity{
         Button btnLogin = findViewById(R.id.loginButton);
         btnLogin.setOnClickListener(v -> {
             // Prevents user from spam clicking
-            if (MisclickPreventer.cantClickAgain()) { return; }
+            if (MisclickPreventer.cantClickAgain()) {
+                return;
+            }
             signIn(emailField.getText().toString(), passwordField.getText().toString());
         });
         Button btnRegister = findViewById(R.id.registerButton);
         btnRegister.setOnClickListener(v -> {
             // Prevents user from spam clicking
-            if (MisclickPreventer.cantClickAgain()) { return; }
+            if (MisclickPreventer.cantClickAgain()) {
+                return;
+            }
             createAccount(emailField.getText().toString(), passwordField.getText().toString());
         });
     }

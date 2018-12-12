@@ -89,44 +89,48 @@ public class ChatActivity extends AppCompatActivity {
             messageText = findViewById(R.id.messageText);
             // Create button for users to send messages
             FloatingActionButton fabSendMessage = findViewById(R.id.sendMessage);
-            fabSendMessage.setOnClickListener(v ->{
+            fabSendMessage.setOnClickListener(v -> {
                 // Prevents user from spam clicking
-                if (MisclickPreventer.cantClickAgain()) { return; }
+                if (MisclickPreventer.cantClickAgain()) {
+                    return;
+                }
                 sendMessage();
-                });
+            });
             Button btnSpareChange = findViewById(R.id.btnSpareChange);
             btnSpareChange.setOnClickListener(v -> {
                 // Prevents user from spam clicking
-                if (MisclickPreventer.cantClickAgain()) { return; }
+                if (MisclickPreventer.cantClickAgain()) {
+                    return;
+                }
                 startActivity(new Intent(ChatActivity.this, SpareChangeActivity.class));
             });
         }
     }
 
-    private void sendMessage(){
+    private void sendMessage() {
         // Only allow sending of message if text is not empty
         if (messageText.getText().toString().equals("")) {
             messageText.setError("Cannot send an empty message");
             return;
         }
-        Map<String,Object> newMessage = new HashMap<>();
+        Map<String, Object> newMessage = new HashMap<>();
         // Add the message and empty the text field
         newMessage.put("messageText", messageText.getText().toString());
         messageText.setText("");
         userData.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                 Map userInfo = task.getResult().getData();
                 // Fill in message information as sender, messageText and time of creation
-                newMessage.put("sender",userInfo.get("username").toString());
+                newMessage.put("sender", userInfo.get("username").toString());
                 newMessage.put("created", FieldValue.serverTimestamp());
                 database.collection("Chat").add(newMessage)
-                        .addOnSuccessListener(documentReference -> Log.d(TAG,"Message sent"))
+                        .addOnSuccessListener(documentReference -> Log.d(TAG, "Message sent"))
                         .addOnFailureListener(e -> {
-                            Log.d(TAG,e.getMessage());
-                            Toast.makeText(getApplicationContext(),"Message not sent!",Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, e.getMessage());
+                            Toast.makeText(getApplicationContext(), "Message not sent!", Toast.LENGTH_SHORT).show();
                         });
             } else {
-                Log.d(TAG, "Get failed with "+task.getException());
+                Log.d(TAG, "Get failed with " + task.getException());
             }
         });
     }
@@ -149,20 +153,20 @@ public class ChatActivity extends AppCompatActivity {
         // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map exchangeRates = task.getResult().getData();
-                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(exchangeRates.get("DOLR").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(exchangeRates.get("QUID").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = " + df.format(Double.parseDouble(exchangeRates.get("PENY").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = " + df.format(Double.parseDouble(exchangeRates.get("SHIL").toString())) + " GOLD");
                 } else {
-                    Log.d(TAG, "Get failed with "+task.getException());
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;
         }
         // Show user's gold and bank in allowance
-        if (id == R.id.goldBag){
+        if (id == R.id.goldBag) {
             userData.get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();

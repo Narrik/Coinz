@@ -7,11 +7,12 @@ public class Message {
 
     @SuppressWarnings("unused")
     // Necessary due to firebase
-    public Message() {}
+    public Message() {
+    }
 
     @SuppressWarnings("WeakerAccess")
     // Necessary due to firebase
-    public Message(String sender, String messageText){
+    public Message(String sender, String messageText) {
         this.sender = sender;
         this.messageText = messageText;
     }

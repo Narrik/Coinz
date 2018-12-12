@@ -46,8 +46,8 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         // If there is no user, don't continue
-        if (currentUser == null){
-            Log.d(TAG,"Cannot load bank if user is not logged in");
+        if (currentUser == null) {
+            Log.d(TAG, "Cannot load bank if user is not logged in");
         }
         // Access our database
         FirebaseFirestore database = FirebaseFirestore.getInstance();
@@ -56,7 +56,7 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
                 .build();
         database.setFirestoreSettings(settings);
         // Get current user information
-        if (currentUser !=null) {
+        if (currentUser != null) {
             DocumentReference userData = database.collection("Users").document(currentUser.getUid());
             // Get the data item for this position
             Coin coin = getItem(position);
@@ -127,26 +127,25 @@ public class CoinAdapter extends ArrayAdapter<Coin> {
         return convertView;
     }
 
-    private void isChecked(int position,boolean flag )
-    {
+    private void isChecked(int position, boolean flag) {
         checkedForCoin.put(this.coins.get(position), flag);
     }
 
 
-    public LinkedList<String> getSelectedCoins(){
+    public LinkedList<String> getSelectedCoins() {
         LinkedList<String> selectedCoins = new LinkedList<>();
         for (Map.Entry<Coin, Boolean> pair : checkedForCoin.entrySet()) {
-            if(pair.getValue()) {
+            if (pair.getValue()) {
                 selectedCoins.add(pair.getKey().getId());
             }
         }
         return selectedCoins;
     }
 
-    public Double getSelectedCoinsGoldValue(){
+    public Double getSelectedCoinsGoldValue() {
         Double totalGoldValue = 0d;
         for (Map.Entry<Coin, Boolean> pair : checkedForCoin.entrySet()) {
-            if(pair.getValue()) {
+            if (pair.getValue()) {
                 totalGoldValue += pair.getKey().getValue() * Double.parseDouble(userInfo.get(pair.getKey().getCurrency()).toString());
             }
         }

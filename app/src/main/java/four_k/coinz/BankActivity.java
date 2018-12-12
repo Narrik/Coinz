@@ -133,7 +133,7 @@ public class BankActivity extends AppCompatActivity {
                         }
                     });
                     // After banking coin return to main menu
-                    Toast.makeText(this, "Coins banked-in for "+roundedUpGold+" GOLD!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Coins banked-in for " + roundedUpGold + " GOLD!", Toast.LENGTH_SHORT).show();
                     finish();
                 }
             }

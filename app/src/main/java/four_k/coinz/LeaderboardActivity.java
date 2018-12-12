@@ -67,19 +67,19 @@ public class LeaderboardActivity extends AppCompatActivity {
             listView.setAdapter(adapter);
             // Show leaderboard placing
             database.collection("Users")
-                .whereGreaterThan("GOLD",0)
-                .orderBy("GOLD", Query.Direction.DESCENDING)
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()){
-                        for (DocumentSnapshot document : task.getResult().getDocuments()){
-                            Map userData = document.getData();
-                            if (userData != null) {
-                                adapter.add(new Message(userData.get("username").toString(), userData.get("GOLD").toString() + " GOLD"));
-                                Log.d(TAG, "Added a user to the leaderboard");
-                            }
+                    .whereGreaterThan("GOLD", 0)
+                    .orderBy("GOLD", Query.Direction.DESCENDING)
+                    .get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                    for (DocumentSnapshot document : task.getResult().getDocuments()) {
+                        Map userData = document.getData();
+                        if (userData != null) {
+                            adapter.add(new Message(userData.get("username").toString(), userData.get("GOLD").toString() + " GOLD"));
+                            Log.d(TAG, "Added a user to the leaderboard");
                         }
                     }
-                });
+                }
+            });
         }
     }
 
@@ -101,20 +101,20 @@ public class LeaderboardActivity extends AppCompatActivity {
         // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map exchangeRates = task.getResult().getData();
-                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(exchangeRates.get("DOLR").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(exchangeRates.get("QUID").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = " + df.format(Double.parseDouble(exchangeRates.get("PENY").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = " + df.format(Double.parseDouble(exchangeRates.get("SHIL").toString())) + " GOLD");
                 } else {
-                    Log.d(TAG, "Get failed with "+task.getException());
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;
         }
         // Show user's gold and bank in allowance
-        if (id == R.id.goldBag){
+        if (id == R.id.goldBag) {
             userData.get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();

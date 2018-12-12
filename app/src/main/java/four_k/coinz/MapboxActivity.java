@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener{
+public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallback, LocationEngineListener, PermissionsListener {
 
     private static final String TAG = "MapboxActivity";
     private MapView mapView;
@@ -65,7 +65,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Get mapbox instance
-        Mapbox.getInstance(this,getString(R.string.access_token));
+        Mapbox.getInstance(this, getString(R.string.access_token));
         setContentView(R.layout.activity_mapbox);
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
@@ -82,7 +82,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Map");
         // Set up the mapbox
-        if (mapboxMap == null){
+        if (mapboxMap == null) {
             Log.d(TAG, "[onMapReady] mapBox is null");
         } else {
             map = mapboxMap;
@@ -93,7 +93,9 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             FloatingActionButton fab = findViewById(R.id.floatingActionButton);
             fab.setOnClickListener((View view) -> {
                 // Prevents user from spam clicking
-                if (MisclickPreventer.cantClickAgain()) { return; }
+                if (MisclickPreventer.cantClickAgain()) {
+                    return;
+                }
                 if (currentLocation != null) {
                     setCameraPosition(currentLocation);
                     fab.hide();
@@ -101,7 +103,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             });
             // Show locate user button if user moves camera
             map.addOnCameraMoveStartedListener(reason -> {
-                if (reason == 1){
+                if (reason == 1) {
                     fab.show();
                 }
             });
@@ -119,8 +121,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             FirebaseAuth mAuth = FirebaseAuth.getInstance();
             FirebaseUser currentUser = mAuth.getCurrentUser();
             // If there is no user, don't continue
-            if (currentUser == null){
-                Log.d(TAG,"Cannot load maps if user is not logged in");
+            if (currentUser == null) {
+                Log.d(TAG, "Cannot load maps if user is not logged in");
                 finish();
             }
             // Access our database
@@ -139,11 +141,11 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     }
 
 
-    public void drawCoins(){
+    public void drawCoins() {
         // Remove previous markers as this method is called to update when a coin is collected
         // Download information about which coins have not yet been collected
         userData.collection("Map")
-                .whereGreaterThanOrEqualTo("value",0)
+                .whereGreaterThanOrEqualTo("value", 0)
                 .get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 map.removeAnnotations();
@@ -156,40 +158,41 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         });
     }
 
-    private void drawCoin(Coin coin){
+    private void drawCoin(Coin coin) {
         DecimalFormat df = new DecimalFormat("0.00");
         // Check what currency a coin is
         switch (coin.getCurrency()) {
             case "DOLR":
                 map.addMarker(new MarkerOptions()
-                    // Draw icon based on coin's currency
-                    .icon(dolrIcon)
-                    // Format title into (Value 2 decimal places + currency)
-                    .title(df.format(coin.getValue()) + " " + coin.getCurrency())
-                    // Draw point based on the latitude and longitude
-                    .position(new LatLng(coin.getLatitude(),coin.getLongitude())));
+                        // Draw icon based on coin's currency
+                        .icon(dolrIcon)
+                        // Format title into (Value 2 decimal places + currency)
+                        .title(df.format(coin.getValue()) + " " + coin.getCurrency())
+                        // Draw point based on the latitude and longitude
+                        .position(new LatLng(coin.getLatitude(), coin.getLongitude())));
                 break;
             case "QUID":
                 map.addMarker(new MarkerOptions()
                         .icon(quidIcon)
                         .title(df.format(coin.getValue()) + " " + coin.getCurrency())
-                        .position(new LatLng(coin.getLatitude(),coin.getLongitude())));
+                        .position(new LatLng(coin.getLatitude(), coin.getLongitude())));
                 break;
             case "PENY":
                 map.addMarker(new MarkerOptions()
                         .icon(penyIcon)
                         .title(df.format(coin.getValue()) + " " + coin.getCurrency())
-                        .position(new LatLng(coin.getLatitude(),coin.getLongitude())));
+                        .position(new LatLng(coin.getLatitude(), coin.getLongitude())));
                 break;
             case "SHIL":
                 map.addMarker(new MarkerOptions()
                         .icon(shilIcon)
                         .title(df.format(coin.getValue()) + " " + coin.getCurrency())
-                        .position(new LatLng(coin.getLatitude(),coin.getLongitude())));
+                        .position(new LatLng(coin.getLatitude(), coin.getLongitude())));
                 break;
-            default: break;
-            }
+            default:
+                break;
         }
+    }
 
     private void enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(this)) {
@@ -268,24 +271,24 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         }
     }
 
-    public void collectCoins(){
+    public void collectCoins() {
         userData.collection("Map")
-                .whereGreaterThanOrEqualTo("value",0)
+                .whereGreaterThanOrEqualTo("value", 0)
                 .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            if (collectCoin(document.toObject(Coin.class))){
-                                document.getReference().delete();
-                                drawCoins();
-                            }
-                        }
-                    } else {
-                        Log.d(TAG, "Error getting documents: ", task.getException());
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    if (collectCoin(document.toObject(Coin.class))) {
+                        document.getReference().delete();
+                        drawCoins();
                     }
-                });
+                }
+            } else {
+                Log.d(TAG, "Error getting documents: ", task.getException());
+            }
+        });
     }
 
-    public boolean collectCoin(Coin coin){
+    public boolean collectCoin(Coin coin) {
         DecimalFormat df = new DecimalFormat("0.00");
         Location coinLocation = new Location("");
         coinLocation.setLatitude(coin.getLatitude());
@@ -293,7 +296,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         float distanceInMetres = coinLocation.distanceTo(currentLocation);
         // If our distance to coin is less than 25 metres, user can press button to collect coin
         if (distanceInMetres <= 25) {
-            Toast.makeText(getApplicationContext(), "Collected a "+df.format(coin.getValue())+" "+coin.getCurrency()+" coin!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Collected a " + df.format(coin.getValue()) + " " + coin.getCurrency() + " coin!", Toast.LENGTH_SHORT).show();
             userData.collection("Wallet").document(coin.getId()).set(coin);
             return true;
         }
@@ -309,7 +312,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
 
     @Override
     public void onPermissionResult(boolean granted) {
-        Log.d(TAG, "[onPermissionResult] granted = "+granted);
+        Log.d(TAG, "[onPermissionResult] granted = " + granted);
         if (granted) {
             enableLocation();
         } else {
@@ -376,7 +379,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (locationEngine != null){
+        if (locationEngine != null) {
             locationEngine.deactivate();
         }
         mapView.onDestroy();
@@ -399,20 +402,20 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map exchangeRates = task.getResult().getData();
-                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(exchangeRates.get("DOLR").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(exchangeRates.get("QUID").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = " + df.format(Double.parseDouble(exchangeRates.get("PENY").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = " + df.format(Double.parseDouble(exchangeRates.get("SHIL").toString())) + " GOLD");
                 } else {
-                    Log.d(TAG, "Get failed with "+task.getException());
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;
         }
         // Show user's gold and bank in allowance
-        if (id == R.id.goldBag){
+        if (id == R.id.goldBag) {
             userData.get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();
