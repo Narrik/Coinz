@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/yellow"
     tools:context=".SpareChangeActivity">
 
     <android.support.design.widget.AppBarLayout
@@ -60,6 +61,7 @@
         android:layout_marginTop="8dp"
         android:clickable="true"
         android:focusable="true"
+        android:backgroundTint="@android:color/holo_orange_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/etReceiver"

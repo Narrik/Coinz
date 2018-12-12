@@ -36,7 +36,8 @@ public class LeaderboardMessageAdapter extends ArrayAdapter<Message> {
         // Populate the data into the template view using the data object
         if (message != null) {
             messageText.setText(message.getMessageText());
-            sender.setText(message.getSender());
+            String userPlaceAndName = (position+1)+". "+message.getSender();
+            sender.setText(userPlaceAndName);
         }
         // Return the completed view to render on screen
         return convertView;

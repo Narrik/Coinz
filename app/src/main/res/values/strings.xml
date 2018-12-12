@@ -40,4 +40,6 @@
     <string name="currency_icon">Currency Icon</string>
     <string name="leaderboard">Leaderboard</string>
     <string name="play">Play</string>
+    <string name="coinz">Coinz</string>
+    <string name="welcome_to_coinz">Welcome to Coinz!</string>
 </resources>

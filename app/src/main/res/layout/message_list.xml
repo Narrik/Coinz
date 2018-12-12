@@ -7,15 +7,15 @@
 
     <TextView
         android:id="@+id/tvSender"
-        android:layout_width="98dp"
+        android:layout_width="113dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginTop="8dp"
         android:gravity="center"
         android:text="@string/loading"
         android:textColor="@android:color/black"
-        android:textStyle="bold"
         android:textSize="16sp"
+        android:textStyle="bold"
 
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -24,15 +24,15 @@
 
     <TextView
         android:id="@+id/tvMessage"
-        android:layout_width="246dp"
+        android:layout_width="239dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:gravity="start|center"
+        android:gravity="center|start"
         android:text="@string/loading"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.652"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/tvSender"
         app:layout_constraintTop_toTopOf="parent" />
 </android.support.constraint.ConstraintLayout>

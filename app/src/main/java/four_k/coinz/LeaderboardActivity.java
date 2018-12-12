@@ -56,7 +56,7 @@ public class LeaderboardActivity extends AppCompatActivity {
             // We are using Message object here as it contains 2 fields for strings, perfect for username and GOLD
             ArrayList<Message> userGolds = new ArrayList<>();
             // Create the adapter to convert the array to views
-            MessageAdapter adapter = new MessageAdapter(this, userGolds);
+            LeaderboardMessageAdapter adapter = new LeaderboardMessageAdapter(this, userGolds);
             // Attach the adapter to a ListView
             ListView listView = findViewById(R.id.list_view);
             listView.setAdapter(adapter);
