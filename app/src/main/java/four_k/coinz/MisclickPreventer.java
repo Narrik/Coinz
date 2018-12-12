@@ -6,7 +6,7 @@ public class MisclickPreventer {
     private static long lastClickTime = 0;
 
     public static boolean cantClickAgain() {
-        boolean cantClick = SystemClock.elapsedRealtime() - lastClickTime < 2000;
+        boolean cantClick = SystemClock.elapsedRealtime() - lastClickTime < 1000;
         lastClickTime = SystemClock.elapsedRealtime();
         return cantClick;
     }

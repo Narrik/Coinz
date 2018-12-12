@@ -34,8 +34,10 @@
     <string name="your_gold_and_coin_bank_in_limit">Your Gold and coin bank-in limit:</string>
     <string name="switch_to_spare_change">Switch to Spare Change</string>
     <string name="bank_in_selected_coins">Bank-In selected coins</string>
-    <string name="_25_remaining">/25 remaining</string>
+    <string name="_25_remaining">/25 bank-in limit</string>
     <string name="nolimit">No Limit</string>
     <string name="loading">loading…</string>
     <string name="currency_icon">Currency Icon</string>
+    <string name="leaderboard">Leaderboard</string>
+    <string name="play">Play</string>
 </resources>

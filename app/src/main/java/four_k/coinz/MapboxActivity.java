@@ -417,7 +417,7 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
                 if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
-                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 bank-in limit");
                 } else {
                     Log.d(TAG, "Get failed with " + task.getException());
                 }

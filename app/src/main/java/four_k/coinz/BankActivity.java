@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -28,6 +29,7 @@ public class BankActivity extends AppCompatActivity {
     private static final String TAG = "BankActivity";
     private DocumentReference userData;
     private CoinAdapter adapter;
+    private TextView bankLimit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +46,8 @@ public class BankActivity extends AppCompatActivity {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         // If there is no user, don't continue
-        if (currentUser == null){
-            Log.d(TAG,"Cannot load bank if user is not logged in");
+        if (currentUser == null) {
+            Log.d(TAG, "Cannot load bank if user is not logged in");
             finish();
         } else {
             // Access our database
@@ -81,39 +83,62 @@ public class BankActivity extends AppCompatActivity {
                     Log.d(TAG, "Error getting documents: ", task.getException());
                 }
             });
+            bankLimit = findViewById(R.id.tvBankLimit);
+            userData.get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                    Log.d(TAG, "Getting bank-in Limit");
+                    bankLimit.setText(task.getResult().getData().get("bankLimit").toString() + "/25 bank-in limit");
+                }
+            });
             Button btnBankIn = findViewById(R.id.btnBankIn);
             btnBankIn.setOnClickListener(v -> {
                 // Prevents user from spam clicking
-                if (MisclickPreventer.cantClickAgain()) { return; }
-                // Bank coins into gold
+                if (MisclickPreventer.cantClickAgain()) {
+                    return;
+                }
+                // Attempt to bank coins
                 bankCoins();
             });
         }
     }
 
-        public void bankCoins(){
-            if (adapter.getSelectedCoins().isEmpty()) {
-                Toast.makeText(this, "Select at least 1 Coin", Toast.LENGTH_SHORT).show();
-            } else {
-                // Remove every coin from user's wallet
-                for (String coinId : adapter.getSelectedCoins()){
-                    userData.collection("Wallet").document(coinId).delete();
-                }
-                // Round up the gold value
-                int roundedUpGold = new Double (adapter.getSelectedCoinsGoldValue() + 0.5d).intValue();
-                // Get user current gold and increase it
-                userData.get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
-                        Log.d(TAG,"Increasing user gold");
-                        int currentGold = Integer.parseInt(task.getResult().getData().get("GOLD").toString());
-                        userData.update("GOLD",currentGold+roundedUpGold);
-                    }
-                });
-                // After banking coin return to main menu
-                Toast.makeText(this, "Coins banked in!", Toast.LENGTH_SHORT).show();
-                finish();
-            }
+    public void bankCoins() {
+        if (adapter.getSelectedCoins().isEmpty()) {
+            Toast.makeText(this, "Select at least 1 Coin", Toast.LENGTH_SHORT).show();
+            return;
         }
+        userData.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                Log.d(TAG, "Getting bank-in limit");
+                // If user attempts to bank in more coins than they have limit for, warn them with a toast
+                if (Integer.parseInt(task.getResult().getData().get("bankLimit").toString()) - adapter.getSelectedCoins().size() < 0) {
+                    Toast.makeText(this, "Bank-in amount exceeds daily limit, send spare change to another user or lose it at midnight!", Toast.LENGTH_LONG).show();
+                } else {
+                    // Remove banked-in coins from user's wallet
+                    for (String coinId : adapter.getSelectedCoins()) {
+                        userData.collection("Wallet").document(coinId).delete();
+                    }
+                    // Round up the gold value
+                    int roundedUpGold = new Double(adapter.getSelectedCoinsGoldValue() + 0.5d).intValue();
+                    // Get information about user's gold and bankLimit fields
+                    userData.get().addOnCompleteListener(task1 -> {
+                        if (task1.isSuccessful() && task1.getResult() != null && task1.getResult().getData() != null) {
+                            Log.d(TAG, "Increasing user gold and lowering bank-in limit");
+                            int currentGold = Integer.parseInt(task1.getResult().getData().get("GOLD").toString());
+                            int currentBankLimit = Integer.parseInt(task1.getResult().getData().get("bankLimit").toString());
+                            // Increase user gold
+                            userData.update("GOLD", currentGold + roundedUpGold);
+                            // Decrease coin bank-in limit and update textView field
+                            userData.update("bankLimit", currentBankLimit - adapter.getSelectedCoins().size());
+                        }
+                    });
+                    // After banking coin return to main menu
+                    Toast.makeText(this, "Coins banked-in for "+roundedUpGold+" GOLD!", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            }
+        });
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -132,25 +157,25 @@ public class BankActivity extends AppCompatActivity {
         // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map exchangeRates = task.getResult().getData();
-                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = "+ df.format(Double.parseDouble(exchangeRates.get("DOLR").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = "+ df.format(Double.parseDouble(exchangeRates.get("QUID").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = "+ df.format(Double.parseDouble(exchangeRates.get("PENY").toString()))+" GOLD");
-                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = "+ df.format(Double.parseDouble(exchangeRates.get("SHIL").toString()))+" GOLD");
+                    item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(exchangeRates.get("DOLR").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(exchangeRates.get("QUID").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.penyRate).setTitle("PENY = " + df.format(Double.parseDouble(exchangeRates.get("PENY").toString())) + " GOLD");
+                    item.getSubMenu().findItem(R.id.shilRate).setTitle("SHIL = " + df.format(Double.parseDouble(exchangeRates.get("SHIL").toString())) + " GOLD");
                 } else {
-                    Log.d(TAG, "Get failed with "+task.getException());
+                    Log.d(TAG, "Get failed with " + task.getException());
                 }
             });
             return true;
         }
         // Show user's gold and bank in allowance
-        if (id == R.id.goldBag){
+        if (id == R.id.goldBag) {
             userData.get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
-                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 bank-in limit");
                 } else {
                     Log.d(TAG, "Get failed with " + task.getException());
                 }

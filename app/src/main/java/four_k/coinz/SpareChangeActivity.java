@@ -90,7 +90,7 @@ public class SpareChangeActivity extends AppCompatActivity {
                 if (MisclickPreventer.cantClickAgain()) {
                     return;
                 }
-                // Send gold to another user
+                // Attempt to send gold to another user
                 sendSpareChangeGold(etReceiver.getText().toString());
             });
 
@@ -98,55 +98,55 @@ public class SpareChangeActivity extends AppCompatActivity {
     }
 
     private void sendSpareChangeGold(String receiver) {
-        if (etReceiver.getText().toString().equals("")){
+        if (etReceiver.getText().toString().equals("")) {
             etReceiver.setError("Username cannot be empty");
             return;
         }
         // Check user wants to send at least 1 coin
         if (adapter.getSelectedCoins().isEmpty()) {
             Toast.makeText(this, "Select at least 1 Coin", Toast.LENGTH_SHORT).show();
-        } else {
-            userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
-                    // Check user isn't sending gold to himself
-                    if (task.getResult().getData().get("username").toString().equals(receiver)) {
-                        Toast.makeText(this, "Cannot send spare change to yourself!", Toast.LENGTH_SHORT).show();
-                        // User is sending GOLD to a different user
-                    } else {
-                        // Remove every coin from user's wallet
-                        for (String coinId : adapter.getSelectedCoins()) {
-                            userData.collection("Wallet").document(coinId).delete();
-                        }
-                        // Round up the gold value
-                        int roundedUpGold = new Double(adapter.getSelectedCoinsGoldValue() + 0.5d).intValue();
-                        // Get receiver's current gold and increase it
-                        database.collection("Users")
-                                .whereEqualTo("username", receiver)
-                                .get().addOnCompleteListener(task1 -> {
-                                    if (task1.isSuccessful() && task1.getResult() != null && !task1.getResult().isEmpty()){
-                                        Log.d(TAG, "Sending gold to "+receiver);
-                                        // Because usernames are unique there is only 1 receiver
-                                        for (QueryDocumentSnapshot document : task1.getResult()) {
-                                            document.getReference().get().addOnCompleteListener(task2 -> {
-                                                if (task2.isSuccessful() && task2.getResult() != null && task2.getResult().getData() != null){
-                                                    Log.d(TAG,"Increasing "+receiver+" gold");
-                                                    int currentGold = Integer.parseInt(task2.getResult().getData().get("GOLD").toString());
-                                                    document.getReference().update("GOLD",currentGold+roundedUpGold);
-                                                    // After sending coins return to main menu
-                                                    Toast.makeText(this, "Coins sent!", Toast.LENGTH_SHORT).show();
-                                                    finish();
-                                                }
-                                            });
-                                        }
-                                } else {
-                                        // No user found
-                                        Toast.makeText(this, "No user with such username exists", Toast.LENGTH_SHORT).show();
-                                    }
-                            });
-                        }
-                    }
-            });
+            return;
         }
+        userData.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
+                // Check user isn't sending gold to himself
+                if (task.getResult().getData().get("username").toString().equals(receiver)) {
+                    Toast.makeText(this, "Cannot send spare change to yourself!", Toast.LENGTH_SHORT).show();
+                    // User is sending GOLD to a different user
+                } else {
+                    // Remove every coin from user's wallet
+                    for (String coinId : adapter.getSelectedCoins()) {
+                        userData.collection("Wallet").document(coinId).delete();
+                    }
+                    // Round up the gold value
+                    int roundedUpGold = new Double(adapter.getSelectedCoinsGoldValue() + 0.5d).intValue();
+                    // Get receiver's current gold and increase it
+                    database.collection("Users")
+                            .whereEqualTo("username", receiver)
+                            .get().addOnCompleteListener(task1 -> {
+                        if (task1.isSuccessful() && task1.getResult() != null && !task1.getResult().isEmpty()) {
+                            Log.d(TAG, "Sending gold to " + receiver);
+                            // Because usernames are unique there is only 1 receiver
+                            for (QueryDocumentSnapshot document : task1.getResult()) {
+                                document.getReference().get().addOnCompleteListener(task2 -> {
+                                    if (task2.isSuccessful() && task2.getResult() != null && task2.getResult().getData() != null) {
+                                        Log.d(TAG, "Increasing " + receiver + " gold");
+                                        int currentGold = Integer.parseInt(task2.getResult().getData().get("GOLD").toString());
+                                        document.getReference().update("GOLD", currentGold + roundedUpGold);
+                                        // After sending coins return to main menu
+                                        Toast.makeText(this, "Gold sent!", Toast.LENGTH_SHORT).show();
+                                        finish();
+                                    }
+                                });
+                            }
+                        } else {
+                            // No user found
+                            Toast.makeText(this, "No user with such username exists", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        });
     }
 
     @Override
@@ -179,12 +179,12 @@ public class SpareChangeActivity extends AppCompatActivity {
             return true;
         }
         // Show user's gold and bank in allowance
-        if (id == R.id.goldBag){
+        if (id == R.id.goldBag) {
             userData.get().addOnCompleteListener(task -> {
                 if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
-                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");
+                    item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 bank-in limit");
                 } else {
                     Log.d(TAG, "Get failed with " + task.getException());
                 }

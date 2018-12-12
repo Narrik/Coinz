@@ -6,20 +6,26 @@
 
     <ImageView
         android:id="@+id/ivCurrencyIcon"
-        android:layout_width="61dp"
-        android:layout_height="59dp"
-        android:contentDescription="@string/currency_icon"/>
+        android:layout_width="63dp"
+        android:layout_height="54dp"
+        android:layout_marginBottom="8dp"
+        android:contentDescription="@string/currency_icon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
 
     <TextView
         android:id="@+id/tvCoinInfo"
-        android:layout_width="124dp"
-        android:layout_height="46dp"
+        android:layout_width="103dp"
+        android:layout_height="38dp"
         android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        android:textSize="16sp"
-        android:textColor="@android:color/black"
         android:text="@string/loading"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/ivCurrencyIcon"
         app:layout_constraintTop_toTopOf="parent"
@@ -27,15 +33,16 @@
 
     <TextView
         android:id="@+id/tvGoldinfo"
-        android:layout_width="130dp"
-        android:layout_height="47dp"
+        android:layout_width="149dp"
+        android:layout_height="38dp"
         android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        android:textSize="18sp"
-        android:textColor="@android:color/black"
-        android:textStyle="bold"
         android:text="@string/loading"
+        android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvCoinInfo"
         app:layout_constraintTop_toTopOf="parent"
@@ -43,8 +50,8 @@
 
     <CheckBox
         android:id="@+id/checkBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="29dp"
+        android:layout_height="34dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -53,5 +60,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvGoldinfo"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.017" />
+        app:layout_constraintVertical_bias="0.0" />
 </android.support.constraint.ConstraintLayout>
