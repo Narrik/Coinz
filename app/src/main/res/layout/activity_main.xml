@@ -25,7 +25,7 @@
     <Button
         android:id="@+id/chatButton"
         android:layout_width="150dp"
-        android:layout_height="50dp"
+        android:layout_height="55dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -36,7 +36,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/bankButton"
-        app:layout_constraintVertical_bias="0.122" />
+        app:layout_constraintVertical_bias="0.13999999" />
 
     <Button
         android:id="@+id/signOutButton"
@@ -69,7 +69,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/playButton"
-        app:layout_constraintVertical_bias="0.115" />
+        app:layout_constraintVertical_bias="0.13" />
 
     <Button
         android:id="@+id/leaderboardButton"

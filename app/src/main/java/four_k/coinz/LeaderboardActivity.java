@@ -1,6 +1,7 @@
 package four_k.coinz;
 
 import android.icu.text.DecimalFormat;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -9,13 +10,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ListView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -60,23 +65,21 @@ public class LeaderboardActivity extends AppCompatActivity {
             // Attach the adapter to a ListView
             ListView listView = findViewById(R.id.list_view);
             listView.setAdapter(adapter);
-            // Show previous messages
+            // Show leaderboard placing
             database.collection("Users")
-                    .whereGreaterThan("GOLD",0)
-                    .orderBy("GOLD", Query.Direction.DESCENDING)
-                    .addSnapshotListener(((queryDocumentSnapshots, e) -> {
-                        if (e != null) {
-                            Log.e(TAG, e.getMessage());
-                        } else if (queryDocumentSnapshots != null) {
-                            for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
-                                if (dc.getType().equals(DocumentChange.Type.ADDED)) {
-                                    Map userData = dc.getDocument().getData();
-                                    adapter.add(new Message(userData.get("username").toString(), userData.get("GOLD").toString()+" GOLD"));
-                                    Log.d(TAG, "Added a user to the leaderboard");
-                                }
+                .whereGreaterThan("GOLD",0)
+                .orderBy("GOLD", Query.Direction.DESCENDING)
+                .get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()){
+                        for (DocumentSnapshot document : task.getResult().getDocuments()){
+                            Map userData = document.getData();
+                            if (userData != null) {
+                                adapter.add(new Message(userData.get("username").toString(), userData.get("GOLD").toString() + " GOLD"));
+                                Log.d(TAG, "Added a user to the leaderboard");
                             }
                         }
-                    }));
+                    }
+                });
         }
     }
 
