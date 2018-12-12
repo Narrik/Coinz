@@ -9,7 +9,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -31,8 +30,6 @@ import java.util.Map;
 public class ChatActivity extends AppCompatActivity {
 
     private static final String TAG = "ChatActivity";
-    private FirebaseAuth mAuth;
-    private FirebaseUser currentUser;
     private FirebaseFirestore database;
     private DocumentReference userData;
     private EditText messageText;
@@ -45,54 +42,65 @@ public class ChatActivity extends AppCompatActivity {
         // Display activity name and back arrow on toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Chat");
-        // Get current user
-        mAuth = FirebaseAuth.getInstance();
-        currentUser = mAuth.getCurrentUser();
-        // If there is no user, don't continue
-        if (currentUser == null){
-            Log.d(TAG,"Cannot load chat if user is not logged in");
-            finish();
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Chat");
         }
-        // Access our database
-        database = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        database.setFirestoreSettings(settings);
-        // Get current user information
-        userData = database.collection("Users").document(currentUser.getUid());
-        // Construct the data source for listView
-        ArrayList<Message> previousMessages = new ArrayList<>();
-        // Create the adapter to convert the array to views
-        MessageAdapter adapter = new MessageAdapter(this, previousMessages);
-        // Attach the adapter to a ListView
-        ListView listView = findViewById(R.id.list_view);
-        listView.setAdapter(adapter);
-        // Show previous messages
-        database.collection("Chat")
-                .orderBy("created", Query.Direction.ASCENDING)
-                .addSnapshotListener(((queryDocumentSnapshots, e) -> {
-                    if (e != null ) {
-                        Log.e(TAG,e.getMessage());
-                    } else if (queryDocumentSnapshots != null) {
-                        for (DocumentChange dc: queryDocumentSnapshots.getDocumentChanges()) {
-                            if (dc.getType().equals(DocumentChange.Type.ADDED)) {
-                                Map messageData = dc.getDocument().getData();
-                                adapter.add(new Message(messageData.get("sender").toString(), messageData.get("messageText").toString()));
-                                Log.d(TAG, "Added a message");
+        // Get current user
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        // If there is no user, don't continue
+        if (currentUser == null) {
+            Log.d(TAG, "Cannot load chat if user is not logged in");
+            finish();
+        } else {
+            // Access our database
+            database = FirebaseFirestore.getInstance();
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                    .setTimestampsInSnapshotsEnabled(true)
+                    .build();
+            database.setFirestoreSettings(settings);
+            // Get current user information
+            userData = database.collection("Users").document(currentUser.getUid());
+            // Construct the data source for listView
+            ArrayList<Message> previousMessages = new ArrayList<>();
+            // Create the adapter to convert the array to views
+            MessageAdapter adapter = new MessageAdapter(this, previousMessages);
+            // Attach the adapter to a ListView
+            ListView listView = findViewById(R.id.list_view);
+            listView.setAdapter(adapter);
+            // Show previous messages
+            database.collection("Chat")
+                    .orderBy("created", Query.Direction.ASCENDING)
+                    .addSnapshotListener(((queryDocumentSnapshots, e) -> {
+                        if (e != null) {
+                            Log.e(TAG, e.getMessage());
+                        } else if (queryDocumentSnapshots != null) {
+                            for (DocumentChange dc : queryDocumentSnapshots.getDocumentChanges()) {
+                                if (dc.getType().equals(DocumentChange.Type.ADDED)) {
+                                    Map messageData = dc.getDocument().getData();
+                                    adapter.add(new Message(messageData.get("sender").toString(), messageData.get("messageText").toString()));
+                                    Log.d(TAG, "Added a message");
+                                }
                             }
                         }
-                    }
-                }));
-        // Attach editText so user can type message text
-        messageText = findViewById(R.id.messageText);
-        // Create button for users to send messages
-        FloatingActionButton fabSendMessage = findViewById(R.id.sendMessage);
-        fabSendMessage.setOnClickListener(v -> sendMessage());
-        Button btnSpareChange = findViewById(R.id.btnSpareChange);
-        btnSpareChange.setOnClickListener(v -> startActivity(new Intent(ChatActivity.this,SpareChangeActivity.class)));
+                    }));
+            // Attach editText so user can type message text
+            messageText = findViewById(R.id.messageText);
+            // Create button for users to send messages
+            FloatingActionButton fabSendMessage = findViewById(R.id.sendMessage);
+            fabSendMessage.setOnClickListener(v ->{
+                // Prevents user from spam clicking
+                if (MisclickPreventer.cantClickAgain()) { return; }
+                sendMessage();
+                });
+            Button btnSpareChange = findViewById(R.id.btnSpareChange);
+            btnSpareChange.setOnClickListener(v -> {
+                // Prevents user from spam clicking
+                if (MisclickPreventer.cantClickAgain()) { return; }
+                startActivity(new Intent(ChatActivity.this, SpareChangeActivity.class));
+            });
+        }
     }
 
     private void sendMessage(){
@@ -112,9 +120,7 @@ public class ChatActivity extends AppCompatActivity {
                 newMessage.put("sender",userInfo.get("username").toString());
                 newMessage.put("created", FieldValue.serverTimestamp());
                 database.collection("Chat").add(newMessage)
-                        .addOnSuccessListener(documentReference ->{
-                                Log.d(TAG,"Message sent");
-                        })
+                        .addOnSuccessListener(documentReference -> Log.d(TAG,"Message sent"))
                         .addOnFailureListener(e -> {
                             Log.d(TAG,e.getMessage());
                             Toast.makeText(getApplicationContext(),"Message not sent!",Toast.LENGTH_SHORT).show();

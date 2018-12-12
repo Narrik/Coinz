@@ -1,7 +1,6 @@
 package four_k.coinz;
 
 import android.icu.text.DecimalFormat;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,12 +13,9 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
@@ -43,8 +39,10 @@ public class SpareChangeActivity extends AppCompatActivity {
         // Display activity name and back arrow on toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Send Spare Change");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Send Spare Change");
+        }
         // Get current user
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -52,47 +50,51 @@ public class SpareChangeActivity extends AppCompatActivity {
         if (currentUser == null) {
             Log.d(TAG, "Cannot load spare change if user is not logged in");
             finish();
+        } else {
+            // Access our database
+            database = FirebaseFirestore.getInstance();
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                    .setTimestampsInSnapshotsEnabled(true)
+                    .build();
+            database.setFirestoreSettings(settings);
+            // Get current user information
+            userData = database.collection("Users").document(currentUser.getUid());
+            // Construct the data source for listView
+            ArrayList<Coin> coinsInWallet = new ArrayList<>();
+            userData.collection("Wallet")
+                    .orderBy("value", Query.Direction.DESCENDING)
+                    .whereGreaterThanOrEqualTo("value", 0)
+                    .get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    if (task.getResult().isEmpty()) {
+                        // If user has no coins, ask him to collect some first
+                        Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
+                    }
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        coinsInWallet.add(document.toObject(Coin.class));
+                        Log.d(TAG, "Adding a coin");
+                    }
+                    // Create the adapter to convert the array to views
+                    adapter = new CoinAdapter(this, coinsInWallet);
+                    // Attach the adapter to a ListView
+                    ListView listView = findViewById(R.id.list_view);
+                    listView.setAdapter(adapter);
+                    listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
+                } else {
+                    Log.d(TAG, "Error getting documents: ", task.getException());
+                }
+            });
+            etReceiver = findViewById(R.id.etReceiver);
+            FloatingActionButton sendSpareChange = findViewById(R.id.sendSpareChange);
+            sendSpareChange.setOnClickListener(v -> {
+                if (MisclickPreventer.cantClickAgain()) {
+                    return;
+                }
+                // Send gold to another user
+                sendSpareChangeGold(etReceiver.getText().toString());
+            });
+
         }
-        // Access our database
-        database = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        database.setFirestoreSettings(settings);
-        // Get current user information
-        userData = database.collection("Users").document(currentUser.getUid());
-        // Construct the data source for listView
-        ArrayList<Coin> coinsInWallet = new ArrayList<>();
-        userData.collection("Wallet")
-                .orderBy("value", Query.Direction.DESCENDING)
-                .whereGreaterThanOrEqualTo("value", 0)
-                .get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                if (task.getResult().isEmpty()) {
-                    // If user has no coins, ask him to collect some first
-                    Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
-                }
-                for (QueryDocumentSnapshot document : task.getResult()) {
-                    coinsInWallet.add(document.toObject(Coin.class));
-                    Log.d(TAG, "Adding a coin");
-                }
-                // Create the adapter to convert the array to views
-                adapter = new CoinAdapter(this, coinsInWallet);
-                // Attach the adapter to a ListView
-                ListView listView = findViewById(R.id.list_view);
-                listView.setAdapter(adapter);
-                listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
-            } else {
-                Log.d(TAG, "Error getting documents: ", task.getException());
-            }
-        });
-        etReceiver = findViewById(R.id.etReceiver);
-        FloatingActionButton sendSpareChange = findViewById(R.id.sendSpareChange);
-        sendSpareChange.setOnClickListener(v -> {
-            if (MisclickPreventer.cantClickAgain()){ return; }
-            // Send gold to another user
-            sendSpareChangeGold(etReceiver.getText().toString());
-        });
     }
 
     private void sendSpareChangeGold(String receiver) {
@@ -155,7 +157,6 @@ public class SpareChangeActivity extends AppCompatActivity {
     }
 
     @Override
-    @SuppressWarnings("ConstantConditions")
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long

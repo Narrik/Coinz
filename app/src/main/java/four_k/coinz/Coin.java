@@ -8,8 +8,12 @@ public class Coin {
     private double longitude;
     private double latitude;
 
+    @SuppressWarnings("unused")
+    // Necessary due to firebase
     public Coin() {}
 
+    @SuppressWarnings("WeakerAccess")
+    // Necessary due to firebase
     public Coin(String id, double value, String currency, double longitude, double latitude){
         this.id = id;
         this.value = value;

@@ -1,19 +1,13 @@
 package four_k.coinz;
 
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCanceledListener;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -22,7 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LoginActivity extends AppCompatActivity implements View.OnClickListener{
+public class LoginActivity extends AppCompatActivity{
 
     private static final String TAG = "LoginActivity";
     private FirebaseAuth mAuth;
@@ -44,8 +38,18 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         emailField = findViewById(R.id.emailField);
         passwordField = findViewById(R.id.passwordField);
         // Buttons
-        findViewById(R.id.loginButton).setOnClickListener(this);
-        findViewById(R.id.registerButton).setOnClickListener(this);
+        Button btnLogin = findViewById(R.id.loginButton);
+        btnLogin.setOnClickListener(v -> {
+            // Prevents user from spam clicking
+            if (MisclickPreventer.cantClickAgain()) { return; }
+            signIn(emailField.getText().toString(), passwordField.getText().toString());
+        });
+        Button btnRegister = findViewById(R.id.registerButton);
+        btnRegister.setOnClickListener(v -> {
+            // Prevents user from spam clicking
+            if (MisclickPreventer.cantClickAgain()) { return; }
+            createAccount(emailField.getText().toString(), passwordField.getText().toString());
+        });
     }
 
     @Override
@@ -56,16 +60,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         // If user is signed in, return to main menu
         if (currentUser != null) {
             finish();
-        }
-    }
-
-    @Override
-    public void onClick(View view) {
-        int i = view.getId();
-        if (i == R.id.registerButton) {
-            createAccount(emailField.getText().toString(), passwordField.getText().toString());
-        } else if (i == R.id.loginButton) {
-            signIn(emailField.getText().toString(), passwordField.getText().toString());
         }
     }
 
@@ -80,13 +74,15 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                     if (task.isSuccessful()) {
                         // Sign in success, update UI with the signed-in user's information
                         FirebaseUser currentUser = mAuth.getCurrentUser();
-                        Log.d(TAG, "createUserWithEmail:success");
-                        Map<String,Object> userInfo = new HashMap<>();
-                        userInfo.put("email",currentUser.getEmail());
-                        userInfo.put("username","");
-                        userInfo.put("GOLD",0);
-                        userInfo.put("bankLimit",25);
-                        database.collection("Users").document(currentUser.getUid()).set(userInfo);
+                        if (currentUser != null) {
+                            Log.d(TAG, "createUserWithEmail:success");
+                            Map<String, Object> userInfo = new HashMap<>();
+                            userInfo.put("email", currentUser.getEmail());
+                            userInfo.put("username", "");
+                            userInfo.put("GOLD", 0);
+                            userInfo.put("bankLimit", 25);
+                            database.collection("Users").document(currentUser.getUid()).set(userInfo);
+                        }
                         finish();
                     } else {
                         // If sign in fails, display a message to the user.

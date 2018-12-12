@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -30,8 +31,6 @@ import com.mapbox.geojson.Point;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,24 +59,32 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         // Button for turning on Map
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener((View view) -> {
+            // Prevents users from clicking more than once until action is executed
+            if (MisclickPreventer.cantClickAgain()) { return; }
             Intent mapIntent = new Intent(MainActivity.this, MapboxActivity.class);
             startActivity(mapIntent);
         });
         // Button for turning on chat
         Button chatButton = findViewById(R.id.chatButton);
         chatButton.setOnClickListener((View view) -> {
+            // Prevents users from clicking more than once until action is executed
+            if (MisclickPreventer.cantClickAgain()) { return; }
             Intent chatIntent = new Intent(MainActivity.this, ChatActivity.class);
             startActivity(chatIntent);
         });
         // Button for accessing bank
         Button bankButton = findViewById(R.id.bankButton);
         bankButton.setOnClickListener((View view) -> {
+            // Prevents users from clicking more than once until action is executed
+            if (MisclickPreventer.cantClickAgain()) { return; }
             Intent bankIntent = new Intent(MainActivity.this, BankActivity.class);
             startActivity(bankIntent);
         });
         // Button for signing out
         Button signOutButton = findViewById(R.id.signOutButton);
         signOutButton.setOnClickListener((View view) -> {
+            // Prevents users from clicking more than once until action is executed
+            if (MisclickPreventer.cantClickAgain()) { return; }
             FirebaseAuth mAuth;
             mAuth = FirebaseAuth.getInstance();
             FirebaseUser user = mAuth.getCurrentUser();
@@ -120,7 +127,8 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
                 // If user has not set a name yet, ask them to create one with an uncancellable alert dialog
                 if (task.getResult().getData().get("username").equals("")){
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
-                    View dialogView = getLayoutInflater().inflate(R.layout.dialog_username,null);
+                    final ViewGroup nullParent = null;
+                    View dialogView = getLayoutInflater().inflate(R.layout.dialog_username,nullParent);
                     EditText etUsername = dialogView.findViewById(R.id.etUsername);
                     Button btnAccept = dialogView.findViewById(R.id.btnAccept);
                     alertBuilder.setView(dialogView);
@@ -152,6 +160,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
                         }
                     });
                 } else {
+                    // If user has a username, check if they have today's map
                     Log.d(TAG,"Calling getInformation");
                     getInformation();
                 }
@@ -168,7 +177,8 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         // Check user's Map collection for information on when map was last downloaded (on firebase)
         userData.collection("Map").document("LastDownload").get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null){
-                // If a map was never downloaded, or wasn't downloaded today, get today's map and remove old coins
+                // If a map was never downloaded, or wasn't downloaded today,
+                // get today's map and remove old coins, otherwise do nothing
                 if (!task.getResult().getData().containsKey("date") || !(task.getResult().getData().get("date").equals(today))) {
                     Log.d(TAG,"Updating map");
                     // Reset today's bank in allowance to 25 coins
@@ -190,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
     }
 
     private void removeOldCoinsFromMap() {
+        // Get user's Map collection of documents and remove them all and put today's date
         userData.collection("Map")
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
@@ -209,6 +220,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
     }
 
     private void removeOldCoinsFromWallet() {
+        // Get user's Wallet collection of documents and remove them all
         userData.collection("Wallet")
                 .whereGreaterThanOrEqualTo("value",0)
                 .get().addOnCompleteListener(task -> {
@@ -224,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
     }
 
     private void downloadTodayMap() {
+        // Start an Async download task
         DownloadFileTask task = new DownloadFileTask();
         task.delegate = this;
         task.execute("http://homepages.inf.ed.ac.uk/stg/coinz/"+today+"/coinzmap.geojson");
@@ -231,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
 
     // Async DownloadFileTask callback
     @Override
+    // File is guaranteed to have all the necessary fields
     @SuppressWarnings("ConstantConditions")
     public void processFinish(String s){
         // Extract Feature collection from today's geoJson
@@ -247,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
             }
         }
         try {
+            // Set exchange rates in user's information
             JSONObject geoJson = new JSONObject(s);
             JSONObject rates = geoJson.getJSONObject("rates");
             Map<String, String> exchangeRates = new HashMap<>();
@@ -286,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         // Show today's exchange rates
         if (id == R.id.rates) {
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null) {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.dolrRate).setTitle("DOLR = " + df.format(Double.parseDouble(userInfo.get("DOLR").toString())) + " GOLD");
                     item.getSubMenu().findItem(R.id.quidRate).setTitle("QUID = " + df.format(Double.parseDouble(userInfo.get("QUID").toString())) + " GOLD");
@@ -301,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements DownloadFileTask.
         // Show user's gold and bank in allowance
         if (id == R.id.goldBag){
             userData.get().addOnCompleteListener(task -> {
-                if (task.isSuccessful() && task.getResult() != null) {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().getData() != null) {
                     Map userInfo = task.getResult().getData();
                     item.getSubMenu().findItem(R.id.gold).setTitle(userInfo.get("GOLD").toString() + " GOLD");
                     item.getSubMenu().findItem(R.id.bankAllowance).setTitle(userInfo.get("bankLimit").toString() + "/25 remaining");

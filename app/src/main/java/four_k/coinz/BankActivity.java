@@ -1,8 +1,6 @@
 package four_k.coinz;
 
 import android.icu.text.DecimalFormat;
-import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -14,19 +12,15 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Map;
 
 public class BankActivity extends AppCompatActivity {
@@ -36,15 +30,16 @@ public class BankActivity extends AppCompatActivity {
     private CoinAdapter adapter;
 
     @Override
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bank);
         // Display activity name and back arrow on toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("Bank");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Bank");
+        }
         // Get current user
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -52,51 +47,49 @@ public class BankActivity extends AppCompatActivity {
         if (currentUser == null){
             Log.d(TAG,"Cannot load bank if user is not logged in");
             finish();
-        }
-        // Access our database
-        FirebaseFirestore database = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setTimestampsInSnapshotsEnabled(true)
-                .build();
-        database.setFirestoreSettings(settings);
-        // Get current user information
-        userData = database.collection("Users").document(currentUser.getUid());
-        // Construct the data source for listView
-        ArrayList<Coin> coinsInWallet = new ArrayList<>();
-        userData.collection("Wallet")
-                .orderBy("value", Query.Direction.DESCENDING)
-                .whereGreaterThanOrEqualTo("value",0)
-                .get().addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        if (task.getResult().isEmpty()) {
-                            // If user has no coins, ask him to collect some first
-                            Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
-                        }
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            coinsInWallet.add(document.toObject(Coin.class));
-                            Log.d(TAG, "Adding a coin");
-                        }
-                        // Create the adapter to convert the array to views
-                        adapter = new CoinAdapter(this, coinsInWallet);
-                        // Attach the adapter to a ListView
-                        ListView listView = findViewById(R.id.list_view);
-                        listView.setAdapter(adapter);
-                        listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
-                    } else {
-                        Log.d(TAG, "Error getting documents: ", task.getException());
+        } else {
+            // Access our database
+            FirebaseFirestore database = FirebaseFirestore.getInstance();
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                    .setTimestampsInSnapshotsEnabled(true)
+                    .build();
+            database.setFirestoreSettings(settings);
+            // Get current user information
+            userData = database.collection("Users").document(currentUser.getUid());
+            // Construct the data source for listView
+            ArrayList<Coin> coinsInWallet = new ArrayList<>();
+            userData.collection("Wallet")
+                    .orderBy("value", Query.Direction.DESCENDING)
+                    .whereGreaterThanOrEqualTo("value", 0)
+                    .get().addOnCompleteListener(task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    if (task.getResult().isEmpty()) {
+                        // If user has no coins, ask him to collect some first
+                        Toast.makeText(getApplicationContext(), "Try collecting some coins on the map first!", Toast.LENGTH_LONG).show();
                     }
-                });
+                    for (QueryDocumentSnapshot document : task.getResult()) {
+                        coinsInWallet.add(document.toObject(Coin.class));
+                        Log.d(TAG, "Adding a coin");
+                    }
+                    // Create the adapter to convert the array to views
+                    adapter = new CoinAdapter(this, coinsInWallet);
+                    // Attach the adapter to a ListView
+                    ListView listView = findViewById(R.id.list_view);
+                    listView.setAdapter(adapter);
+                    listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE);
+                } else {
+                    Log.d(TAG, "Error getting documents: ", task.getException());
+                }
+            });
             Button btnBankIn = findViewById(R.id.btnBankIn);
             btnBankIn.setOnClickListener(v -> {
                 // Prevents user from spam clicking
-                if (MisclickPreventer.cantClickAgain()) {
-                    return;
-                }
+                if (MisclickPreventer.cantClickAgain()) { return; }
                 // Bank coins into gold
                 bankCoins();
             });
-
         }
+    }
 
         public void bankCoins(){
             if (adapter.getSelectedCoins().isEmpty()) {
@@ -130,7 +123,6 @@ public class BankActivity extends AppCompatActivity {
     }
 
     @Override
-    @SuppressWarnings("ConstantConditions")
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long

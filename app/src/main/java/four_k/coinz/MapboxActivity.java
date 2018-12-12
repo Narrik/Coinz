@@ -92,6 +92,8 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
             // Add locate user option and hide it on click
             FloatingActionButton fab = findViewById(R.id.floatingActionButton);
             fab.setOnClickListener((View view) -> {
+                // Prevents user from spam clicking
+                if (MisclickPreventer.cantClickAgain()) { return; }
                 if (currentLocation != null) {
                     setCameraPosition(currentLocation);
                     fab.hide();
@@ -387,7 +389,6 @@ public class MapboxActivity extends AppCompatActivity implements OnMapReadyCallb
         return true;
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will

@@ -5,8 +5,12 @@ public class Message {
     private String sender;
     private String messageText;
 
+    @SuppressWarnings("unused")
+    // Necessary due to firebase
     public Message() {}
 
+    @SuppressWarnings("WeakerAccess")
+    // Necessary due to firebase
     public Message(String sender, String messageText){
         this.sender = sender;
         this.messageText = messageText;
