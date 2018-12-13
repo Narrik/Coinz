@@ -91,12 +91,8 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         // If sign in fails, display a message to the user.
                         Log.d(TAG, "createUserWithEmail:failure", task.getException());
-                        if (password.length() < 6) {
-                            Toast.makeText(this, "Password must be at least 6 characters.",
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(this, "Email address not valid or already in use.",
-                                    Toast.LENGTH_SHORT).show();
+                        if (task.getException() != null) {
+                            Toast.makeText(this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -117,8 +113,9 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         // If sign in fails, display a message to the user.
                         Log.d(TAG, "signInWithEmail:failure", task.getException());
-                        Toast.makeText(this, "Unknown email/password combination.",
-                                Toast.LENGTH_SHORT).show();
+                        if (task.getException() != null) {
+                            Toast.makeText(this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
     }
